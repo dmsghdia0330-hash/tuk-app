@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Reference mockup, not part of the app build.
+    "tuk-app-forest.jsx",
   ]),
 ]);
 

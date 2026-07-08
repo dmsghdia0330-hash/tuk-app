@@ -1,3 +1,6 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
+@import url("https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap");
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -46,4 +49,28 @@ a {
   html {
     color-scheme: dark;
   }
+}
+
+/* ===== TUK ===== */
+.serif {
+  font-family: "Nanum Myeongjo", serif;
+  letter-spacing: -0.5px;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-1.5deg); }
+  50% { transform: rotate(1.5deg); }
+}
+
+textarea::placeholder {
+  color: #655f78;
 }
