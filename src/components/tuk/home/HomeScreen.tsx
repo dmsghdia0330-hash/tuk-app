@@ -109,7 +109,11 @@ export default function HomeScreen() {
       {selectedTag && (
         <div style={{ padding: "0 20px 4px", display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 12.5, color: T.sub }}>필터:</span>
-          <span style={{ fontSize: 12.5, color: CATEGORIES[SUBTAG_CAT[selectedTag]]?.color, fontWeight: 700 }}>#{selectedTag}</span>
+          {(() => {
+            const cat = entries.find((e) => e.tags.includes(selectedTag))?.category;
+            const c = (cat && CATEGORIES[cat]?.color) || "#8B85A0";
+            return <span style={{ fontSize: 12.5, color: c, fontWeight: 700 }}>#{selectedTag}</span>;
+          })()}
           <button onClick={() => setSelectedTag(null)} style={{ background: "none", border: "none", color: T.dim, fontSize: 12, cursor: "pointer" }}>지우기</button>
         </div>
       )}
@@ -148,7 +152,7 @@ export default function HomeScreen() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                   {e.tags.length > 0 ? e.tags.map((t) => {
-                    const c = CATEGORIES[SUBTAG_CAT[t]]?.color || "#8B85A0";
+                    const c = (e.category && CATEGORIES[e.category]?.color) || "#8B85A0";
                     return <button key={t} onClick={() => setSelectedTag(t)} style={{ fontSize: 11.5, fontWeight: 700, color: c, background: c + "1E", padding: "3px 9px", borderRadius: 999, border: "none", cursor: "pointer" }}>#{t}</button>;
                   }) : <span style={{ fontSize: 11.5, color: T.dim }}>메모</span>}
                 </div>
@@ -164,7 +168,7 @@ export default function HomeScreen() {
                 <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.line}`, animation: "fadeUp .2s ease" }}>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
                     {e.tags.length > 0 ? e.tags.map((t) => {
-                      const c = CATEGORIES[SUBTAG_CAT[t]]?.color || "#8B85A0";
+                      const c = (e.category && CATEGORIES[e.category]?.color) || "#8B85A0";
                       return (
                         <span key={t} style={{ fontSize: 11.5, fontWeight: 700, color: c, background: c + "1E", padding: "3px 6px 3px 9px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4 }}>
                           #{t}

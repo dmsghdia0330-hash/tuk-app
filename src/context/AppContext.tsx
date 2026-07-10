@@ -6,15 +6,16 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { AI_REACTIONS, THEMES } from "@/lib/tuk/constants";
+import { AI_REACTIONS, SUBTAG_CAT, THEMES } from "@/lib/tuk/constants";
 import { guessTags } from "@/lib/tuk/classify";
-import { localEntriesRepo, migrateLocalEntriesToRemote, remoteEntriesRepo } from "@/lib/tuk/entriesRepo";
-import { recordCorrection } from "@/lib/tuk/personalization";
+import { flushPendingWrites, localEntriesRepo, migrateLocalEntriesToRemote, remoteEntriesRepo } from "@/lib/tuk/entriesRepo";
+import { clearPersonalization, recordCorrection } from "@/lib/tuk/personalization";
 import type { Entry, ThemeName, ThemePalette } from "@/lib/tuk/types";
 
 interface TodayLeaf {
@@ -38,7 +39,7 @@ interface AppContextValue {
 
   user: User | null;
   signedIn: boolean;
-  signInWithEmail: (email: string, birthdate?: string) => Promise<{ error: string | null }>;
+  signInWithEmail: (email: string, birthdate?: string, guardianConsent?: boolean) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 
   toast: string | null;
@@ -64,6 +65,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [leafPop, setLeafPop] = useState<string | null>(null);
   const [aiReaction, setAiReaction] = useState<string | null>(null);
   const [welcomeBack, setWelcomeBack] = useState<string | null>(null);
+
+  // classifyEntry는 클로저로 캡처한 repo가 아니라 이 ref로 "지금 로그인된 유저"를
+  // 확인한다 — 던진 직후 바로 로그인하면 로컬→서버 마이그레이션이 분류 응답보다
+  // 먼저 끝날 수 있어, 분류 결과가 이미 비워진 로컬 저장소로 유실되는 걸 막는다.
+  const latestUserRef = useRef<User | null>(null);
+  useEffect(() => {
+    latestUserRef.current = user;
+  }, [user]);
+
+  // 로그인 직후 진행 중인 로컬→서버 마이그레이션을 classifyEntry가 기다릴 수 있게
+  // 하는 참조. 마이그레이션 도중에 분류 결과가 오면 targetRepo를 고르기 전에
+  // 이 프라미스가 끝나길 기다려야 로컬/서버 어느 쪽으로도 유실되지 않는다.
+  const migrationPromiseRef = useRef<Promise<void> | null>(null);
 
   const showToast = useCallback((m: string) => {
     setToast(m);
@@ -102,8 +116,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null);
+      // 새 기기/브라우저라 로컬엔 온보딩 흔적이 없어도, 이미 계정이 있는 사람에게
+      // 온보딩을 다시 들이밀지 않는다.
+      if (session?.user && typeof window !== "undefined") {
+        window.localStorage.setItem("tuk:onboarded", "1");
+        // 지난 세션에서 네트워크 문제로 서버에 못 올라간 기록/수정이 있으면
+        // 여기서 다시 시도한다 — loadFor보다 먼저 해야 그 결과가 곧장 반영된다.
+        await flushPendingWrites(session.user.id).catch((err) => console.error(err));
+      }
       loadFor(session?.user ?? null);
     });
 
@@ -111,12 +133,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const nextUser = session?.user ?? null;
       setUser(nextUser);
       if (event === "SIGNED_IN" && nextUser) {
-        try {
-          await migrateLocalEntriesToRemote(nextUser.id);
-        } catch (err) {
+        const migration = migrateLocalEntriesToRemote(nextUser.id).catch((err) => {
           console.error(err);
           showToast("이전 기록을 옮기지 못했어요");
-        }
+        });
+        migrationPromiseRef.current = migration;
+        await migration;
+        migrationPromiseRef.current = null;
+        await flushPendingWrites(nextUser.id).catch((err) => console.error(err));
       }
       loadFor(nextUser);
     });
@@ -137,6 +161,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       let tags: string[] = [];
       let risk = false;
       let spendEmotion: Entry["spendEmotion"] = null;
+      let category: Entry["category"] = null;
       try {
         const res = await fetch("/api/classify", {
           method: "POST",
@@ -148,6 +173,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         risk = Boolean(data.risk);
         if (!risk && !data.undecided && data.category) {
           tags = Array.isArray(data.subtags) ? data.subtags.slice(0, 2) : [];
+          category = data.category;
           if (data.category === "소비") {
             spendEmotion = data.spendEmotion ?? null;
           }
@@ -155,10 +181,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error(err);
         tags = guessTags(text); // 분류 서버 호출 실패 시 임시 키워드 매칭으로 대체
+        category = tags[0] ? SUBTAG_CAT[tags[0]] ?? null : null;
       }
 
-      setEntries((p) => p.map((e) => (e.id === id ? { ...e, tags, risk, spendEmotion } : e)));
-      repo.update(id, { tags, risk, spendEmotion }).catch((err) => {
+      // 현재 이 함수가 바인딩된 repo는 호출 시점의 게스트/로그인 상태를 가리킨다.
+      // 던진 직후 곧바로 로그인해 로컬→서버 마이그레이션이 진행/완료되면 이 update는
+      // 이미 비워진 로컬 저장소를 향하게 되므로, 진행 중인 마이그레이션을 먼저
+      // 기다린 뒤 최신 유저 기준 repo를 다시 계산해 서버 쪽에 반영되게 한다.
+      if (migrationPromiseRef.current) await migrationPromiseRef.current;
+      const targetRepo = latestUserRef.current ? remoteEntriesRepo(latestUserRef.current.id) : repo;
+      setEntries((p) => p.map((e) => (e.id === id ? { ...e, tags, risk, spendEmotion, category } : e)));
+      targetRepo.update(id, { tags, risk, spendEmotion, category }).catch((err) => {
         console.error(err);
       });
 
@@ -178,7 +211,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (text: string) => {
       const trimmed = text.trim();
       if (!trimmed) return;
-      const entry: Entry = { id: crypto.randomUUID(), text: trimmed, tags: [], createdAt: new Date().toISOString(), risk: false, spendEmotion: null };
+      const entry: Entry = { id: crypto.randomUUID(), text: trimmed, tags: [], createdAt: new Date().toISOString(), risk: false, spendEmotion: null, category: null };
       setEntries((p) => [entry, ...p]);
       repo.insert(entry).catch((err) => {
         console.error(err);
@@ -223,13 +256,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const next = p.map((e) => {
           if (e.id === id && !e.tags.includes(tag) && e.tags.length < 2) {
             sourceText = e.text;
-            return { ...e, tags: [...e.tags, tag] };
+            // 분류가 확신 없어(undecided) category가 비어있던 기록에 수동으로
+            // 태그를 붙이는 경우, 이 고정 태그 목록에서 카테고리를 함께 채워야
+            // 나무 화면에서 이 기록이 어느 가지에도 안 걸리는 걸 막을 수 있다.
+            const category = e.category ?? SUBTAG_CAT[tag] ?? null;
+            return { ...e, tags: [...e.tags, tag], category };
           }
           return e;
         });
         const updated = next.find((e) => e.id === id);
         if (updated) {
-          repo.update(id, { tags: updated.tags }).catch((err) => {
+          repo.update(id, { tags: updated.tags, category: updated.category }).catch((err) => {
             console.error(err);
             showToast("태그를 저장하지 못했어요");
           });
@@ -263,6 +300,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       if (user) {
         await remoteEntriesRepo(user.id).removeAll();
+        await clearPersonalization(user.id);
       } else {
         localEntriesRepo.clear();
       }
@@ -274,12 +312,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [user, showToast]);
 
   const signInWithEmail = useCallback(
-    async (email: string, birthdate?: string) => {
+    async (email: string, birthdate?: string, guardianConsent?: boolean) => {
+      // 보호자 동의 여부와 시각을 계정 메타데이터에 함께 남긴다 — 체크박스는
+      // 화면에만 있고 서버 어디에도 기록되지 않으면 나중에 확인할 수 없다.
+      const data =
+        birthdate || guardianConsent
+          ? {
+              ...(birthdate ? { birthdate } : {}),
+              ...(guardianConsent ? { guardianConsentAt: new Date().toISOString() } : {}),
+            }
+          : undefined;
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: birthdate ? { birthdate } : undefined,
+          data,
         },
       });
       return { error: error?.message ?? null };

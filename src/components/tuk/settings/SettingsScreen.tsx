@@ -32,7 +32,7 @@ export default function SettingsScreen() {
   const handleSendLink = async () => {
     if (sendDisabled) return;
     setSending(true);
-    const { error } = await signInWithEmail(email.trim(), birthdate);
+    const { error } = await signInWithEmail(email.trim(), birthdate, isUnder14 ? guardianConsent : undefined);
     setSending(false);
     if (error) {
       showToast("메일을 보내지 못했어요");

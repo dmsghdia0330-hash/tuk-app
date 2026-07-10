@@ -8,6 +8,7 @@ export interface Entry {
   createdAt: string;
   risk: boolean;
   spendEmotion: SpendEmotion | null;
+  category: Category | null;
 }
 
 export type ThemeName = "dark" | "light";

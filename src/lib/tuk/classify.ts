@@ -1,5 +1,4 @@
-// Placeholder classifier — keyword matching only. Replace with a real LLM
-// call (see tuk-project-spec.md "AI 분류 프롬프트 설계") in a later step.
+// /api/classify(실제 LLM 호출)가 실패했을 때만 쓰는 키워드 기반 폴백.
 export function guessTags(text: string): string[] {
   const t = text.toLowerCase();
   const tags: string[] = [];
