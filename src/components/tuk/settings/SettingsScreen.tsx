@@ -17,12 +17,14 @@ function calcAge(birthdate: string): number | null {
 }
 
 export default function SettingsScreen() {
-  const { T, theme, setTheme, user, signedIn, signInWithEmail, signOut, showToast, entries, deleteAllEntries } = useTuk();
+  const { T, theme, setTheme, user, signedIn, signInWithEmail, verifyEmailOtp, signOut, showToast, entries, deleteAllEntries } = useTuk();
   const [email, setEmail] = useState("");
   const [birthdate, setBirthdate] = useState("");
   const [guardianConsent, setGuardianConsent] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [notifyOn, setNotifyOn] = useState(true);
 
@@ -59,6 +61,18 @@ export default function SettingsScreen() {
     setSent(true);
   };
 
+  const handleVerifyCode = async () => {
+    if (verifying || code.trim().length < 6) return;
+    setVerifying(true);
+    const { error } = await verifyEmailOtp(email.trim(), code.trim());
+    setVerifying(false);
+    if (error) {
+      showToast("코드가 맞지 않거나 만료됐어요");
+      return;
+    }
+    showToast("로그인됐어요");
+  };
+
   const handleExport = () => {
     const data = JSON.stringify(entries, null, 2);
     const blob = new Blob([data], { type: "application/json" });
@@ -91,10 +105,26 @@ export default function SettingsScreen() {
         </div>
         {!signedIn && (
           sent ? (
-            <div style={{ fontSize: 12.5, color: T.sub, marginTop: 12, lineHeight: 1.6 }}>
-              {email}로 인증 메일을 보냈어요 · 메일함을 확인해주세요
-              <br />
-              <span style={{ color: "#E8A24C" }}>꼭 지금 이 브라우저에서 메일을 열고 링크를 눌러주세요 — 휴대폰이나 다른 브라우저에서 열면 로그인이 안 돼요.</span>
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 12.5, color: T.sub, lineHeight: 1.6, marginBottom: 10 }}>
+                {email}로 인증 코드를 보냈어요 · 메일함에서 6자리 코드를 확인해주세요
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                  placeholder="6자리 코드"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  style={{ flex: 1, background: T.cardAlt, border: `1px solid ${T.line}`, borderRadius: 10, padding: "9px 12px", color: T.text, fontSize: 16, letterSpacing: 4, textAlign: "center", fontFamily: "inherit", outline: "none" }}
+                />
+                <button onClick={handleVerifyCode} disabled={verifying || code.length < 6} style={{ background: T.text, color: T.bg, border: "none", borderRadius: 10, padding: "9px 16px", fontSize: 12.5, fontWeight: 700, cursor: verifying || code.length < 6 ? "default" : "pointer", opacity: verifying || code.length < 6 ? 0.5 : 1, flexShrink: 0, whiteSpace: "nowrap" }}>{verifying ? "확인 중" : "코드 확인"}</button>
+              </div>
+              <div style={{ fontSize: 11.5, color: T.dim, marginTop: 8, lineHeight: 1.5 }}>
+                코드 대신 메일 속 링크를 눌러도 돼요 — 그때는 지금 이 브라우저에서 열어야 로그인이 완료돼요.
+              </div>
+              <button onClick={handleSendLink} disabled={sending} style={{ background: "none", border: "none", color: T.sub, fontSize: 11.5, marginTop: 6, padding: 0, cursor: sending ? "default" : "pointer", textDecoration: "underline" }}>코드를 못 받았어요 · 다시 보내기</button>
             </div>
           ) : (
             <>
@@ -109,8 +139,8 @@ export default function SettingsScreen() {
                   <span>만 14세 미만이시네요. 법정대리인(부모님 등)이 가입에 동의했어요.</span>
                 </label>
               )}
-              <button onClick={handleSendLink} disabled={sendDisabled} style={{ width: "100%", marginTop: 10, background: T.text, color: T.bg, border: "none", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, fontWeight: 700, cursor: sendDisabled ? "default" : "pointer", opacity: sendDisabled ? 0.5 : 1 }}>{sending ? "보내는 중" : "인증 메일 받기"}</button>
-              <div style={{ fontSize: 11.5, color: T.dim, marginTop: 8, lineHeight: 1.5 }}>인증 메일의 링크는 지금 쓰고 있는 이 브라우저에서 열어야 로그인이 완료돼요.</div>
+              <button onClick={handleSendLink} disabled={sendDisabled} style={{ width: "100%", marginTop: 10, background: T.text, color: T.bg, border: "none", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, fontWeight: 700, cursor: sendDisabled ? "default" : "pointer", opacity: sendDisabled ? 0.5 : 1 }}>{sending ? "보내는 중" : "인증 코드 받기"}</button>
+              <div style={{ fontSize: 11.5, color: T.dim, marginTop: 8, lineHeight: 1.5 }}>메일로 6자리 코드가 가요 · 휴대폰에서도 코드를 입력하면 바로 로그인돼요.</div>
             </>
           )
         )}
