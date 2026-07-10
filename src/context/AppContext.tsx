@@ -4,17 +4,20 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
-import { AI_REACTIONS, CATEGORIES, CURRENT_MONTH, SUBTAG_CAT, THEMES, seed } from "@/lib/tuk/constants";
+import type { User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
+import { AI_REACTIONS, THEMES } from "@/lib/tuk/constants";
 import { guessTags } from "@/lib/tuk/classify";
+import { localEntriesRepo, migrateLocalEntriesToRemote, remoteEntriesRepo } from "@/lib/tuk/entriesRepo";
 import type { Entry, ThemeName, ThemePalette } from "@/lib/tuk/types";
 
 interface TodayLeaf {
-  id: number;
+  id: string;
   color: string;
   x: number;
   y: number;
@@ -23,94 +26,234 @@ interface TodayLeaf {
 interface AppContextValue {
   entries: Entry[];
   throwEntry: (text: string) => void;
-  removeTag: (id: number, tag: string) => void;
-  addTag: (id: number, tag: string) => void;
-  deleteEntry: (id: number) => void;
+  removeTag: (id: string, tag: string) => void;
+  addTag: (id: string, tag: string) => void;
+  deleteEntry: (id: string) => void;
+  deleteAllEntries: () => Promise<void>;
 
   theme: ThemeName;
   setTheme: (t: ThemeName) => void;
   T: ThemePalette;
 
+  user: User | null;
   signedIn: boolean;
-  setSignedIn: (v: boolean) => void;
+  signInWithEmail: (email: string) => Promise<{ error: string | null }>;
+  signOut: () => Promise<void>;
 
   toast: string | null;
   showToast: (m: string) => void;
   learnNote: string | null;
 
   todayLeaves: TodayLeaf[];
-  leafPop: number | null;
+  leafPop: string | null;
   aiReaction: string | null;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [entries, setEntries] = useState<Entry[]>(seed);
+  const supabase = useMemo(() => createClient(), []);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [user, setUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<ThemeName>("dark");
-  const [signedIn, setSignedIn] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [learnNote, setLearnNote] = useState<string | null>(null);
   const [todayLeaves, setTodayLeaves] = useState<TodayLeaf[]>([]);
-  const [leafPop, setLeafPop] = useState<number | null>(null);
+  const [leafPop, setLeafPop] = useState<string | null>(null);
   const [aiReaction, setAiReaction] = useState<string | null>(null);
-  const idRef = useRef(1000);
 
   const showToast = useCallback((m: string) => {
     setToast(m);
     setTimeout(() => setToast(null), 1800);
   }, []);
 
-  const throwEntry = useCallback((text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    const tags = guessTags(trimmed);
-    const now = new Date();
-    const currentMonthNum = CURRENT_MONTH.split("-")[1];
-    const id = idRef.current++;
-    setEntries((p) => [
-      { id, month: CURRENT_MONTH, text: trimmed, tags, time: `${currentMonthNum}/${now.getDate()}` },
-      ...p,
-    ]);
+  // 인증 상태 추적. 게스트↔로그인 전환 시 entries 소스를 로컬↔서버로 바꾸고,
+  // 로그인 순간엔 로컬에 쌓여있던 기록을 서버로 옮긴다.
+  useEffect(() => {
+    let cancelled = false;
 
-    // 즉각 보상: 오늘 나무에 잎 하나 돋기
-    const leafColor = tags.length ? CATEGORIES[SUBTAG_CAT[tags[0]]]?.color || "#7FB069" : "#7FB069";
-    const leafId = idRef.current++;
-    const angle = Math.random() * Math.PI - Math.PI / 2; // 위쪽 반원
-    const dist = 20 + Math.random() * 42;
-    const leaf = { id: leafId, color: leafColor, x: Math.cos(angle) * dist, y: -Math.abs(Math.sin(angle) * dist) - 8 };
-    setTodayLeaves((prev) => [...prev, leaf]);
-    setLeafPop(leafId);
-    setTimeout(() => setLeafPop(null), 700);
+    const loadFor = async (nextUser: User | null) => {
+      try {
+        const loaded = nextUser ? await remoteEntriesRepo(nextUser.id).load() : await localEntriesRepo.load();
+        if (!cancelled) setEntries(loaded);
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) showToast("기록을 불러오지 못했어요");
+      }
+    };
 
-    // 가끔(약 35%) AI가 반응
-    const reactableTag = tags.find((t) => AI_REACTIONS[t]);
-    if (reactableTag && Math.random() < 0.5) {
-      const pool = AI_REACTIONS[reactableTag];
-      setAiReaction(pool[Math.floor(Math.random() * pool.length)]);
-      setTimeout(() => setAiReaction(null), 3200);
-    }
-  }, []);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      loadFor(session?.user ?? null);
+    });
 
-  const removeTag = useCallback((id: number, tag: string) => {
-    setEntries((p) => p.map((e) => (e.id === id ? { ...e, tags: e.tags.filter((t) => t !== tag) } : e)));
-  }, []);
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+      if (event === "SIGNED_IN" && nextUser) {
+        try {
+          await migrateLocalEntriesToRemote(nextUser.id);
+        } catch (err) {
+          console.error(err);
+          showToast("이전 기록을 옮기지 못했어요");
+        }
+      }
+      loadFor(nextUser);
+    });
 
-  const addTag = useCallback((id: number, tag: string) => {
-    setEntries((p) =>
-      p.map((e) => (e.id === id && !e.tags.includes(tag) && e.tags.length < 2 ? { ...e, tags: [...e.tags, tag] } : e))
-    );
-    setLearnNote("고쳤어요 · 비슷한 기록은 다음부터 이렇게 붙일게요");
-    setTimeout(() => setLearnNote(null), 2200);
-  }, []);
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase]);
+
+  const repo = useMemo(() => (user ? remoteEntriesRepo(user.id) : localEntriesRepo), [user]);
+
+  // 던진 직후엔 아직 태그를 몰라서(=AI 분류가 비동기) 던지기 자체는 즉시 끝내고,
+  // 분류가 끝나면 이 함수가 태그/위험신호를 채워 넣는다.
+  const classifyEntry = useCallback(
+    async (id: string, text: string) => {
+      let tags: string[] = [];
+      let risk = false;
+      try {
+        const res = await fetch("/api/classify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        if (!res.ok) throw new Error(`classify failed: ${res.status}`);
+        const data = await res.json();
+        risk = Boolean(data.risk);
+        if (!risk && !data.undecided && data.category) {
+          tags = Array.isArray(data.subtags) ? data.subtags.slice(0, 2) : [];
+        }
+      } catch (err) {
+        console.error(err);
+        tags = guessTags(text); // 분류 서버 호출 실패 시 임시 키워드 매칭으로 대체
+      }
+
+      setEntries((p) => p.map((e) => (e.id === id ? { ...e, tags, risk } : e)));
+      repo.update(id, { tags, risk }).catch((err) => {
+        console.error(err);
+      });
+
+      if (risk) return; // 위험 신호가 있으면 가벼운 반응을 붙이지 않는다
+
+      const reactableTag = tags.find((t) => AI_REACTIONS[t]);
+      if (reactableTag && Math.random() < 0.5) {
+        const pool = AI_REACTIONS[reactableTag];
+        setAiReaction(pool[Math.floor(Math.random() * pool.length)]);
+        setTimeout(() => setAiReaction(null), 3200);
+      }
+    },
+    [repo]
+  );
+
+  const throwEntry = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      const entry: Entry = { id: crypto.randomUUID(), text: trimmed, tags: [], createdAt: new Date().toISOString(), risk: false };
+      setEntries((p) => [entry, ...p]);
+      repo.insert(entry).catch((err) => {
+        console.error(err);
+        showToast("기록을 저장하지 못했어요");
+      });
+
+      // 즉각 보상: 오늘 나무에 잎 하나 돋기 (분류 전이라 아직 카테고리 색은 모름)
+      const leafId = crypto.randomUUID();
+      const angle = Math.random() * Math.PI - Math.PI / 2; // 위쪽 반원
+      const dist = 20 + Math.random() * 42;
+      const leaf = { id: leafId, color: "#7FB069", x: Math.cos(angle) * dist, y: -Math.abs(Math.sin(angle) * dist) - 8 };
+      setTodayLeaves((prev) => [...prev, leaf]);
+      setLeafPop(leafId);
+      setTimeout(() => setLeafPop(null), 700);
+
+      classifyEntry(entry.id, trimmed);
+    },
+    [repo, showToast, classifyEntry]
+  );
+
+  const removeTag = useCallback(
+    (id: string, tag: string) => {
+      setEntries((p) => {
+        const next = p.map((e) => (e.id === id ? { ...e, tags: e.tags.filter((t) => t !== tag) } : e));
+        const updated = next.find((e) => e.id === id);
+        if (updated) {
+          repo.update(id, { tags: updated.tags }).catch((err) => {
+            console.error(err);
+            showToast("태그를 저장하지 못했어요");
+          });
+        }
+        return next;
+      });
+    },
+    [repo, showToast]
+  );
+
+  const addTag = useCallback(
+    (id: string, tag: string) => {
+      setEntries((p) => {
+        const next = p.map((e) =>
+          e.id === id && !e.tags.includes(tag) && e.tags.length < 2 ? { ...e, tags: [...e.tags, tag] } : e
+        );
+        const updated = next.find((e) => e.id === id);
+        if (updated) {
+          repo.update(id, { tags: updated.tags }).catch((err) => {
+            console.error(err);
+            showToast("태그를 저장하지 못했어요");
+          });
+        }
+        return next;
+      });
+      setLearnNote("고쳤어요 · 비슷한 기록은 다음부터 이렇게 붙일게요");
+      setTimeout(() => setLearnNote(null), 2200);
+    },
+    [repo, showToast]
+  );
 
   const deleteEntry = useCallback(
-    (id: number) => {
+    (id: string) => {
       setEntries((p) => p.filter((e) => e.id !== id));
+      repo.remove(id).catch((err) => {
+        console.error(err);
+        showToast("삭제하지 못했어요");
+      });
       showToast("지웠어요. 원래 그런 거예요.");
     },
-    [showToast]
+    [repo, showToast]
   );
+
+  const deleteAllEntries = useCallback(async () => {
+    setEntries([]);
+    try {
+      if (user) {
+        await remoteEntriesRepo(user.id).removeAll();
+      } else {
+        localEntriesRepo.clear();
+      }
+      showToast("지웠어요. 처음부터 다시 시작해도 괜찮아요.");
+    } catch (err) {
+      console.error(err);
+      showToast("삭제하지 못했어요");
+    }
+  }, [user, showToast]);
+
+  const signInWithEmail = useCallback(
+    async (email: string) => {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      });
+      return { error: error?.message ?? null };
+    },
+    [supabase]
+  );
+
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+  }, [supabase]);
 
   const T = THEMES[theme];
 
@@ -121,11 +264,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       removeTag,
       addTag,
       deleteEntry,
+      deleteAllEntries,
       theme,
       setTheme,
       T,
-      signedIn,
-      setSignedIn,
+      user,
+      signedIn: !!user,
+      signInWithEmail,
+      signOut,
       toast,
       showToast,
       learnNote,
@@ -133,7 +279,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       leafPop,
       aiReaction,
     }),
-    [entries, throwEntry, removeTag, addTag, deleteEntry, theme, T, signedIn, toast, showToast, learnNote, todayLeaves, leafPop, aiReaction]
+    [entries, throwEntry, removeTag, addTag, deleteEntry, deleteAllEntries, theme, T, user, signInWithEmail, signOut, toast, showToast, learnNote, todayLeaves, leafPop, aiReaction]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

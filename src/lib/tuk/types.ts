@@ -1,11 +1,11 @@
 export type Category = "식단" | "감정" | "할일" | "소비" | "관계";
 
 export interface Entry {
-  id: number;
-  month: string;
+  id: string;
   text: string;
   tags: string[];
-  time: string;
+  createdAt: string;
+  risk: boolean;
 }
 
 export type ThemeName = "dark" | "light";

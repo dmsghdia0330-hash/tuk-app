@@ -2,17 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Mic, Send, X } from "lucide-react";
+import { Camera, Heart, Mic, Send, X } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
 import { ALL_SUBTAGS, CATEGORIES, SUBTAG_CAT } from "@/lib/tuk/constants";
+import { dayLabelOf } from "@/lib/tuk/date";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { entries, T, theme, signedIn, setSignedIn, showToast, todayLeaves, leafPop, aiReaction, throwEntry, removeTag, addTag, deleteEntry } = useTuk();
+  const { entries, T, theme, signedIn, todayLeaves, leafPop, aiReaction, throwEntry, removeTag, addTag, deleteEntry } = useTuk();
   const [text, setText] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const handleThrow = () => {
     if (!text.trim()) return;
@@ -29,7 +30,7 @@ export default function HomeScreen() {
     <>
       {!signedIn && (
         <div style={{ padding: "0 20px 10px" }}>
-          <button onClick={() => { setSignedIn(true); showToast("기록이 계정에 연결됐어요"); }} style={{ width: "100%", background: "transparent", border: `1px dashed ${T.lineSoft}`, borderRadius: 14, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
+          <button onClick={() => router.push("/settings")} style={{ width: "100%", background: "transparent", border: `1px dashed ${T.lineSoft}`, borderRadius: 14, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
             <span style={{ fontSize: 12.5, color: T.sub }}>기록이 쌓이고 있어요 · 가입하면 잃어버리지 않아요</span>
           </button>
         </div>
@@ -114,6 +115,24 @@ export default function HomeScreen() {
         )}
         {feed.map((e) => {
           const expanded = expandedId === e.id, editing = editingId === e.id;
+          if (e.risk) {
+            return (
+              <div key={e.id} style={{ background: T.card, borderRadius: 14, padding: "13px 15px", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
+                <div style={{ fontSize: 14.5, lineHeight: 1.5, marginBottom: 10 }}>{e.text}</div>
+                <div style={{ display: "flex", gap: 10, background: theme === "dark" ? "#20222E" : "#EAEDF5", border: `1px solid ${theme === "dark" ? "#2E3346" : "#D5DBEA"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
+                  <Heart size={16} color="#7C9EFF" style={{ flexShrink: 0, marginTop: 2 }} />
+                  <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.6 }}>
+                    많이 힘들었겠어요. 혼자 감당하지 않아도 돼요.<br />
+                    <span style={{ color: T.sub }}>자살예방상담전화 1393 · 24시간 연결돼요</span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 11, color: T.dim }}>{dayLabelOf(e.createdAt)}</span>
+                  <button onClick={() => deleteEntry(e.id)} style={{ background: "none", border: "none", color: T.dim, fontSize: 11.5, cursor: "pointer" }}>지우기</button>
+                </div>
+              </div>
+            );
+          }
           return (
             <div key={e.id} style={{ background: T.card, borderRadius: 14, padding: "13px 15px", boxShadow: "0 2px 8px rgba(0,0,0,0.3)", border: expanded ? `1px solid ${T.lineSoft}` : "1px solid transparent" }}>
               <div onClick={() => { setExpandedId(expanded ? null : e.id); setEditingId(null); }} style={{ fontSize: 14.5, lineHeight: 1.5, marginBottom: 8, cursor: "pointer" }}>{e.text}</div>
@@ -124,7 +143,7 @@ export default function HomeScreen() {
                     return <button key={t} onClick={() => setSelectedTag(t)} style={{ fontSize: 11.5, fontWeight: 700, color: c, background: c + "1E", padding: "3px 9px", borderRadius: 999, border: "none", cursor: "pointer" }}>#{t}</button>;
                   }) : <span style={{ fontSize: 11.5, color: T.dim }}>메모</span>}
                 </div>
-                <span style={{ fontSize: 11, color: T.dim }}>{e.time}</span>
+                <span style={{ fontSize: 11, color: T.dim }}>{dayLabelOf(e.createdAt)}</span>
               </div>
               {expanded && !editing && (
                 <div style={{ display: "flex", gap: 8, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.line}`, animation: "fadeUp .2s ease" }}>

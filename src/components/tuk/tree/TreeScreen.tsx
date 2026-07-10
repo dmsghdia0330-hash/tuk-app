@@ -5,15 +5,13 @@ import { ChevronLeft, ChevronRight, Heart, PiggyBank, Search, Share2, TreePine, 
 import { useTuk } from "@/context/AppContext";
 import {
   CATEGORIES,
-  CURRENT_MONTH,
   EMPTY_DAY,
-  MONTHS_ORDER,
-  MONTH_LABEL,
   NEGATIVE_TAGS,
   SPEND_EMOTION,
   SUBTAG_CAT,
   spendSeed,
 } from "@/lib/tuk/constants";
+import { dayLabelOf, monthKeyOf, monthLabelOf } from "@/lib/tuk/date";
 import type { CatData, Category } from "@/lib/tuk/types";
 import MiniTree from "./MiniTree";
 import FoodIcon from "./FoodIcon";
@@ -26,12 +24,23 @@ const emptyCatData = (): Record<Category, CatData> => {
 
 export default function TreeScreen() {
   const { entries, T, theme, showToast } = useTuk();
-  const [viewMonth, setViewMonth] = useState(CURRENT_MONTH);
+  const [viewMonth, setViewMonth] = useState(() => monthKeyOf(new Date()));
   const [treeBranch, setTreeBranch] = useState<Category | null>(null);
   const [forestView, setForestView] = useState(false);
   const [search, setSearch] = useState("");
 
-  const monthEntries = useMemo(() => entries.filter((e) => e.month === viewMonth), [entries, viewMonth]);
+  // 실제로 기록이 있는 달 + 이번 달을 최신순으로 나열 (하드코딩된 달 목록 대신 데이터 기반)
+  const monthsOrder = useMemo(() => {
+    const keys = new Set(entries.map((e) => monthKeyOf(e.createdAt)));
+    keys.add(monthKeyOf(new Date()));
+    return [...keys].sort((a, b) => {
+      const [ay, am] = a.split("-").map(Number);
+      const [by, bm] = b.split("-").map(Number);
+      return by - ay || bm - am;
+    });
+  }, [entries]);
+
+  const monthEntries = useMemo(() => entries.filter((e) => monthKeyOf(e.createdAt) === viewMonth), [entries, viewMonth]);
   const tagCounts = useMemo(() => {
     const m: Record<string, number> = {};
     monthEntries.forEach((e) => e.tags.forEach((t) => (m[t] = (m[t] || 0) + 1)));
@@ -69,8 +78,8 @@ export default function TreeScreen() {
 
   // 숲 뷰: 달별 나무 데이터
   const forest = useMemo(() => {
-    return MONTHS_ORDER.map((mon) => {
-      const es = entries.filter((e) => e.month === mon);
+    return monthsOrder.map((mon) => {
+      const es = entries.filter((e) => monthKeyOf(e.createdAt) === mon);
       const cd = emptyCatData();
       es.forEach((e) =>
         e.tags.forEach((t) => {
@@ -81,9 +90,9 @@ export default function TreeScreen() {
         })
       );
       const mx = Math.max(...Object.values(cd).map((c) => c.total), 1);
-      return { month: mon, label: MONTH_LABEL[mon], count: es.length, catData: cd, maxCat: mx };
+      return { month: mon, label: monthLabelOf(mon), count: es.length, catData: cd, maxCat: mx };
     });
-  }, [entries]);
+  }, [entries, monthsOrder]);
 
   // 검색 결과
   const searchResults = useMemo(() => {
@@ -106,8 +115,8 @@ export default function TreeScreen() {
   }, [treeBranch, monthEntries]);
 
   const maxCat = Math.max(...Object.values(catData).map((c) => c.total), 1);
-  const monthIdx = MONTHS_ORDER.indexOf(viewMonth);
-  const isCurrentMonth = viewMonth === CURRENT_MONTH;
+  const monthIdx = monthsOrder.indexOf(viewMonth);
+  const isCurrentMonth = viewMonth === monthKeyOf(new Date());
   const treeMood = monthEntries.length === 0 ? "empty" : isCurrentMonth && monthEntries.length < 5 ? "growing" : monthEntries.length < 4 ? "quiet" : "full";
 
   const impulseFree = useMemo(() => {
@@ -146,7 +155,7 @@ export default function TreeScreen() {
                 <div style={{ fontSize: 13.5, lineHeight: 1.5, marginBottom: 6 }}>{e.text}</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ display: "flex", gap: 5 }}>{e.tags.map((t) => { const c = CATEGORIES[SUBTAG_CAT[t]]?.color || T.sub; return <span key={t} style={{ fontSize: 11, fontWeight: 700, color: c, background: c + "1E", padding: "2px 8px", borderRadius: 999 }}>#{t}</span>; })}</div>
-                  <span style={{ fontSize: 11, color: T.dim }}>{MONTH_LABEL[e.month]} · {e.time}</span>
+                  <span style={{ fontSize: 11, color: T.dim }}>{monthLabelOf(monthKeyOf(e.createdAt))} · {dayLabelOf(e.createdAt)}</span>
                 </div>
               </div>
             ))}
@@ -178,12 +187,12 @@ export default function TreeScreen() {
       {/* 월 이동 (한 그루 보기 · 검색 아님 · 가지상세 아님) */}
       {!treeBranch && !forestView && !search.trim() && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, background: T.card, borderRadius: 14, padding: "8px" }}>
-          <button onClick={() => { if (monthIdx < MONTHS_ORDER.length - 1) setViewMonth(MONTHS_ORDER[monthIdx + 1]); }} disabled={monthIdx >= MONTHS_ORDER.length - 1} style={{ background: "none", border: "none", padding: "8px 12px", cursor: monthIdx >= MONTHS_ORDER.length - 1 ? "default" : "pointer", opacity: monthIdx >= MONTHS_ORDER.length - 1 ? 0.25 : 1, color: T.text, display: "flex" }}><ChevronLeft size={20} /></button>
+          <button onClick={() => { if (monthIdx < monthsOrder.length - 1) setViewMonth(monthsOrder[monthIdx + 1]); }} disabled={monthIdx >= monthsOrder.length - 1} style={{ background: "none", border: "none", padding: "8px 12px", cursor: monthIdx >= monthsOrder.length - 1 ? "default" : "pointer", opacity: monthIdx >= monthsOrder.length - 1 ? 0.25 : 1, color: T.text, display: "flex" }}><ChevronLeft size={20} /></button>
           <div style={{ textAlign: "center" }}>
-            <div className="serif" style={{ fontSize: 19, fontWeight: 700 }}>{MONTH_LABEL[viewMonth]}</div>
+            <div className="serif" style={{ fontSize: 19, fontWeight: 700 }}>{monthLabelOf(viewMonth)}</div>
             {isCurrentMonth && <div style={{ fontSize: 11, color: "#5FD9B4" }}>지금 자라는 중</div>}
           </div>
-          <button onClick={() => { if (monthIdx > 0) setViewMonth(MONTHS_ORDER[monthIdx - 1]); }} disabled={monthIdx <= 0} style={{ background: "none", border: "none", padding: "8px 12px", cursor: monthIdx <= 0 ? "default" : "pointer", opacity: monthIdx <= 0 ? 0.25 : 1, color: T.text, display: "flex" }}><ChevronRight size={20} /></button>
+          <button onClick={() => { if (monthIdx > 0) setViewMonth(monthsOrder[monthIdx - 1]); }} disabled={monthIdx <= 0} style={{ background: "none", border: "none", padding: "8px 12px", cursor: monthIdx <= 0 ? "default" : "pointer", opacity: monthIdx <= 0 ? 0.25 : 1, color: T.text, display: "flex" }}><ChevronRight size={20} /></button>
         </div>
       )}
 
@@ -193,7 +202,7 @@ export default function TreeScreen() {
           <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
             <div style={{ flex: 1, background: T.card, borderRadius: 14, padding: "14px 16px" }}>
               <div className="serif" style={{ fontSize: 25, fontWeight: 700 }}>{monthEntries.length}개</div>
-              <div style={{ fontSize: 12, color: T.sub }}>{MONTH_LABEL[viewMonth]}의 열매</div>
+              <div style={{ fontSize: 12, color: T.sub }}>{monthLabelOf(viewMonth)}의 열매</div>
             </div>
             <div style={{ flex: 1, background: T.card, borderRadius: 14, padding: "14px 16px" }}>
               {topTags[0] ? (
@@ -272,7 +281,7 @@ export default function TreeScreen() {
           )}
 
           <div style={{ background: T.card, borderRadius: 14, padding: "16px", marginBottom: 12, lineHeight: 1.7, fontSize: 14 }}>
-            <div style={{ fontSize: 12, color: T.sub, marginBottom: 6, fontWeight: 700 }}>AI가 정리한 {MONTH_LABEL[viewMonth]}</div>
+            <div style={{ fontSize: 12, color: T.sub, marginBottom: 6, fontWeight: 700 }}>AI가 정리한 {monthLabelOf(viewMonth)}</div>
             {monthEntries.length === 0 ? (
               <span style={{ color: T.text }}>이 달엔 던진 게 없었어요. 그런 달도 있죠. 아무 일 없이 지나간 것도 하나의 기록이에요.</span>
             ) : (
@@ -281,7 +290,7 @@ export default function TreeScreen() {
                   const tc = Object.entries(catData).sort((a, b) => b[1].total - a[1].total)[0];
                   return tc && tc[1].total > 0 ? (
                     <>
-                      {isCurrentMonth ? "아직 초반이지만, " : `${MONTH_LABEL[viewMonth]}은 `}
+                      {isCurrentMonth ? "아직 초반이지만, " : `${monthLabelOf(viewMonth)}은 `}
                       <span style={{ color: CATEGORIES[tc[0] as Category].color, fontWeight: 700 }}>{tc[0]}</span> 가지가 제일 무성했어요.{" "}
                     </>
                   ) : null;
@@ -302,7 +311,7 @@ export default function TreeScreen() {
               <div style={{ color: "#C7CAD6" }}>요즘 지친 마음이 좀 자주 보였어요. 판단하려는 건 아니고요. 혹시 버겁다면, 가까운 사람이나 전문가와 이야기 나눠보는 것도 방법이에요.</div>
             </div>
           )}
-          <button onClick={() => showToast("나무를 이미지로 저장했어요 (데모)")} style={{ width: "100%", background: T.text, color: T.bg, border: "none", borderRadius: 12, padding: "13px", fontSize: 13.5, fontWeight: 700, marginBottom: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><Share2 size={15} /> {MONTH_LABEL[viewMonth]} 나무 공유하기</button>
+          <button onClick={() => showToast("나무를 이미지로 저장했어요 (데모)")} style={{ width: "100%", background: T.text, color: T.bg, border: "none", borderRadius: 12, padding: "13px", fontSize: 13.5, fontWeight: 700, marginBottom: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><Share2 size={15} /> {monthLabelOf(viewMonth)} 나무 공유하기</button>
         </div>
       )}
 
@@ -314,7 +323,7 @@ export default function TreeScreen() {
             <span style={{ width: 13, height: 13, borderRadius: "50%", background: CATEGORIES[treeBranch].color }} />
             <span className="serif" style={{ fontSize: 26, fontWeight: 700 }}>{treeBranch}</span>
           </div>
-          <div style={{ fontSize: 13, color: T.sub, marginBottom: 18 }}>{MONTH_LABEL[viewMonth]}에 {branchDetail.count}번 · 이 가지만 자세히</div>
+          <div style={{ fontSize: 13, color: T.sub, marginBottom: 18 }}>{monthLabelOf(viewMonth)}에 {branchDetail.count}번 · 이 가지만 자세히</div>
 
           {/* --- 소비 가지: 색달력 + 스트릭 --- */}
           {treeBranch === "소비" && (
@@ -523,7 +532,7 @@ export default function TreeScreen() {
                 <div style={{ fontSize: 13.5, lineHeight: 1.5, marginBottom: 6 }}>{e.text}</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ display: "flex", gap: 5 }}>{e.tags.filter((t) => SUBTAG_CAT[t] === treeBranch).map((t) => { const c = CATEGORIES[treeBranch].color; return <span key={t} style={{ fontSize: 11, fontWeight: 700, color: c, background: c + "1E", padding: "2px 8px", borderRadius: 999 }}>#{t}</span>; })}</div>
-                  <span style={{ fontSize: 11, color: T.dim }}>{e.time}</span>
+                  <span style={{ fontSize: 11, color: T.dim }}>{dayLabelOf(e.createdAt)}</span>
                 </div>
               </div>
             ))}
