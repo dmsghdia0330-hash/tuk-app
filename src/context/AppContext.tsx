@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import { AI_REACTIONS, THEMES } from "@/lib/tuk/constants";
 import { guessTags } from "@/lib/tuk/classify";
 import { localEntriesRepo, migrateLocalEntriesToRemote, remoteEntriesRepo } from "@/lib/tuk/entriesRepo";
+import { recordCorrection } from "@/lib/tuk/personalization";
 import type { Entry, ThemeName, ThemePalette } from "@/lib/tuk/types";
 
 interface TodayLeaf {
@@ -194,10 +195,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addTag = useCallback(
     (id: string, tag: string) => {
+      let sourceText: string | null = null;
       setEntries((p) => {
-        const next = p.map((e) =>
-          e.id === id && !e.tags.includes(tag) && e.tags.length < 2 ? { ...e, tags: [...e.tags, tag] } : e
-        );
+        const next = p.map((e) => {
+          if (e.id === id && !e.tags.includes(tag) && e.tags.length < 2) {
+            sourceText = e.text;
+            return { ...e, tags: [...e.tags, tag] };
+          }
+          return e;
+        });
         const updated = next.find((e) => e.id === id);
         if (updated) {
           repo.update(id, { tags: updated.tags }).catch((err) => {
@@ -207,10 +213,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         return next;
       });
+      // 로그인한 사용자의 수정 이력을 저장해두면, 다음 분류 때 이 사람의 표현을 우선 참고한다.
+      if (user && sourceText) {
+        recordCorrection(user.id, sourceText, tag).catch((err) => console.error(err));
+      }
       setLearnNote("고쳤어요 · 비슷한 기록은 다음부터 이렇게 붙일게요");
       setTimeout(() => setLearnNote(null), 2200);
     },
-    [repo, showToast]
+    [repo, showToast, user]
   );
 
   const deleteEntry = useCallback(

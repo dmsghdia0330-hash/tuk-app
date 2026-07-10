@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Bell, Download, Shield, Trash2, User } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
 
@@ -94,6 +95,10 @@ export default function SettingsScreen() {
           </div>
         </div>
       )}
+      <div style={{ display: "flex", justifyContent: "center", gap: 14 }}>
+        <Link href="/terms" style={{ fontSize: 12, color: T.sub }}>이용약관</Link>
+        <Link href="/privacy" style={{ fontSize: 12, color: T.sub }}>개인정보 처리방침</Link>
+      </div>
       <div style={{ fontSize: 11.5, color: T.dim, textAlign: "center", lineHeight: 1.7, padding: "4px 0" }}>툭 v1.0.0 · 만 14세 미만은 보호자 동의가 필요해요<br />툭은 당신을 어떤 유형으로도 함부로 판단하지 않아요</div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@/lib/supabase/server";
 
 const client = new Anthropic();
 
@@ -14,6 +15,31 @@ const SYSTEM_PROMPT = `너는 사용자가 하루 중 아무렇게나 남긴 짧
 5. 확신이 낮으면(0.6 미만) undecided=true, category=null 로 둬. 억지 분류가 오분류보다 나빠.
 6. 자해·자살·타해를 암시하는 표현이 조금이라도 있으면 risk=true로 표시해. 이건 category와 별개로 항상 확인해.
 7. 출력은 지정한 JSON 스키마만 채워. 설명 문장 금지.`;
+
+async function buildPersonalizationBlock(): Promise<string> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return "";
+
+    const { data: corrections } = await supabase
+      .from("personalization_map")
+      .select("source_text, tag")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (!corrections || corrections.length === 0) return "";
+
+    const lines = corrections.map((c: { source_text: string; tag: string }) => `- "${c.source_text}" → ${c.tag}`).join("\n");
+    return `\n\n아래는 이 사용자가 과거에 직접 고친 매핑이야. 우선 참고해:\n${lines}`;
+  } catch (err) {
+    console.error("failed to load personalization map:", err);
+    return "";
+  }
+}
 
 interface ClassifyResult {
   category: (typeof CATEGORY_LIST)[number] | null;
@@ -36,10 +62,11 @@ export async function POST(request: Request) {
   }
 
   try {
+    const personalizationBlock = await buildPersonalizationBlock();
     const response = await client.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 500,
-      system: SYSTEM_PROMPT,
+      system: SYSTEM_PROMPT + personalizationBlock,
       messages: [{ role: "user", content: text.trim() }],
       output_config: {
         format: {
