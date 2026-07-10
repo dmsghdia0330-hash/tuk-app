@@ -5,17 +5,34 @@ import Link from "next/link";
 import { Bell, Download, Shield, Trash2, User } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
 
+function calcAge(birthdate: string): number | null {
+  if (!birthdate) return null;
+  const b = new Date(birthdate);
+  if (Number.isNaN(b.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - b.getFullYear();
+  const monthDiff = now.getMonth() - b.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < b.getDate())) age--;
+  return age;
+}
+
 export default function SettingsScreen() {
   const { T, theme, setTheme, user, signedIn, signInWithEmail, signOut, showToast, entries, deleteAllEntries } = useTuk();
   const [email, setEmail] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [guardianConsent, setGuardianConsent] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
+  const age = calcAge(birthdate);
+  const isUnder14 = age !== null && age < 14;
+  const sendDisabled = sending || !email.trim() || !birthdate || (isUnder14 && !guardianConsent);
+
   const handleSendLink = async () => {
-    if (!email.trim() || sending) return;
+    if (sendDisabled) return;
     setSending(true);
-    const { error } = await signInWithEmail(email.trim());
+    const { error } = await signInWithEmail(email.trim(), birthdate);
     setSending(false);
     if (error) {
       showToast("메일을 보내지 못했어요");
@@ -63,10 +80,18 @@ export default function SettingsScreen() {
             </div>
           ) : (
             <>
-              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="이메일 주소" type="email" style={{ flex: 1, background: T.cardAlt, border: `1px solid ${T.line}`, borderRadius: 10, padding: "9px 12px", color: T.text, fontSize: 13, fontFamily: "inherit", outline: "none" }} />
-                <button onClick={handleSendLink} disabled={sending} style={{ background: T.text, color: T.bg, border: "none", borderRadius: 10, padding: "9px 14px", fontSize: 12.5, fontWeight: 700, cursor: sending ? "default" : "pointer", opacity: sending ? 0.6 : 1, flexShrink: 0, whiteSpace: "nowrap" }}>{sending ? "보내는 중" : "인증 메일 받기"}</button>
+              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="이메일 주소" type="email" style={{ width: "100%", marginTop: 12, background: T.cardAlt, border: `1px solid ${T.line}`, borderRadius: 10, padding: "9px 12px", color: T.text, fontSize: 13, fontFamily: "inherit", outline: "none" }} />
+              <div>
+                <label style={{ display: "block", fontSize: 11, color: T.dim, marginTop: 8, marginBottom: 4 }}>생년월일 (만 14세 미만은 법정대리인 동의가 필요해요)</label>
+                <input value={birthdate} onChange={(e) => setBirthdate(e.target.value)} type="date" style={{ width: "100%", background: T.cardAlt, border: `1px solid ${T.line}`, borderRadius: 10, padding: "9px 12px", color: T.text, fontSize: 13, fontFamily: "inherit", outline: "none" }} />
               </div>
+              {isUnder14 && (
+                <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 10, fontSize: 12, color: T.sub, lineHeight: 1.5, cursor: "pointer" }}>
+                  <input type="checkbox" checked={guardianConsent} onChange={(e) => setGuardianConsent(e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
+                  <span>만 14세 미만이시네요. 법정대리인(부모님 등)이 가입에 동의했어요.</span>
+                </label>
+              )}
+              <button onClick={handleSendLink} disabled={sendDisabled} style={{ width: "100%", marginTop: 10, background: T.text, color: T.bg, border: "none", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, fontWeight: 700, cursor: sendDisabled ? "default" : "pointer", opacity: sendDisabled ? 0.5 : 1 }}>{sending ? "보내는 중" : "인증 메일 받기"}</button>
               <div style={{ fontSize: 11.5, color: T.dim, marginTop: 8, lineHeight: 1.5 }}>인증 메일의 링크는 지금 쓰고 있는 이 브라우저에서 열어야 로그인이 완료돼요.</div>
             </>
           )

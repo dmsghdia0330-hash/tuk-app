@@ -9,11 +9,12 @@ import { dayLabelOf } from "@/lib/tuk/date";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { entries, T, theme, signedIn, todayLeaves, leafPop, aiReaction, throwEntry, removeTag, addTag, deleteEntry } = useTuk();
+  const { entries, T, theme, signedIn, welcomeBack, todayLeaves, leafPop, aiReaction, throwEntry, removeTag, addTag, deleteEntry } = useTuk();
   const [text, setText] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
 
   const handleThrow = () => {
     if (!text.trim()) return;
@@ -28,6 +29,14 @@ export default function HomeScreen() {
 
   return (
     <>
+      {welcomeBack && !welcomeDismissed && (
+        <div style={{ padding: "0 20px 10px" }}>
+          <div style={{ background: theme === "dark" ? "#232038" : "#ECEAF6", borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ fontSize: 13, color: theme === "dark" ? "#D8D2E8" : "#4A4568" }}>{welcomeBack}</span>
+            <button onClick={() => setWelcomeDismissed(true)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0, flexShrink: 0 }}><X size={14} color={T.dim} /></button>
+          </div>
+        </div>
+      )}
       {!signedIn && (
         <div style={{ padding: "0 20px 10px" }}>
           <button onClick={() => router.push("/settings")} style={{ width: "100%", background: "transparent", border: `1px dashed ${T.lineSoft}`, borderRadius: 14, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>

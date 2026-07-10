@@ -38,12 +38,13 @@ interface AppContextValue {
 
   user: User | null;
   signedIn: boolean;
-  signInWithEmail: (email: string) => Promise<{ error: string | null }>;
+  signInWithEmail: (email: string, birthdate?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 
   toast: string | null;
   showToast: (m: string) => void;
   learnNote: string | null;
+  welcomeBack: string | null;
 
   todayLeaves: TodayLeaf[];
   leafPop: string | null;
@@ -62,10 +63,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [todayLeaves, setTodayLeaves] = useState<TodayLeaf[]>([]);
   const [leafPop, setLeafPop] = useState<string | null>(null);
   const [aiReaction, setAiReaction] = useState<string | null>(null);
+  const [welcomeBack, setWelcomeBack] = useState<string | null>(null);
 
   const showToast = useCallback((m: string) => {
     setToast(m);
     setTimeout(() => setToast(null), 1800);
+  }, []);
+
+  // 오랜만에 열었을 때 죄책감 없이 반겨주기. 로그인 여부와 무관하게 이 기기의
+  // 마지막 방문 시각만 본다. localStorage는 서버에 없으므로 반드시 마운트 후
+  // (useEffect 안에서)에만 읽어야 한다 — lazy initializer로 옮기면 서버가 렌더한
+  // HTML(배너 없음)과 클라이언트 첫 렌더(배너 있음)가 어긋나 hydration 에러가 난다.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const last = window.localStorage.getItem("tuk:lastVisit");
+    if (last) {
+      const daysSince = (Date.now() - Number(last)) / (1000 * 60 * 60 * 24);
+      if (daysSince >= 7) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- 위 주석 참고: 의도된 마운트 후 1회성 setState.
+        setWelcomeBack(daysSince >= 21 ? "오랜만이에요. 그동안 뭐 있었어요?" : "다시 와줘서 반가워요.");
+      }
+    }
+    window.localStorage.setItem("tuk:lastVisit", String(Date.now()));
   }, []);
 
   // 인증 상태 추적. 게스트↔로그인 전환 시 entries 소스를 로컬↔서버로 바꾸고,
@@ -255,10 +274,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [user, showToast]);
 
   const signInWithEmail = useCallback(
-    async (email: string) => {
+    async (email: string, birthdate?: string) => {
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: birthdate ? { birthdate } : undefined,
+        },
       });
       return { error: error?.message ?? null };
     },
@@ -289,11 +311,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast,
       showToast,
       learnNote,
+      welcomeBack,
       todayLeaves,
       leafPop,
       aiReaction,
     }),
-    [entries, throwEntry, removeTag, addTag, deleteEntry, deleteAllEntries, theme, T, user, signInWithEmail, signOut, toast, showToast, learnNote, todayLeaves, leafPop, aiReaction]
+    [entries, throwEntry, removeTag, addTag, deleteEntry, deleteAllEntries, theme, T, user, signInWithEmail, signOut, toast, showToast, learnNote, welcomeBack, todayLeaves, leafPop, aiReaction]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
