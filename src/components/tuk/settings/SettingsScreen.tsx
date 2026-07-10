@@ -56,12 +56,19 @@ export default function SettingsScreen() {
         </div>
         {!signedIn && (
           sent ? (
-            <div style={{ fontSize: 12.5, color: T.sub, marginTop: 12, lineHeight: 1.6 }}>{email}로 인증 메일을 보냈어요 · 메일함을 확인해주세요</div>
-          ) : (
-            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="이메일 주소" type="email" style={{ flex: 1, background: T.cardAlt, border: `1px solid ${T.line}`, borderRadius: 10, padding: "9px 12px", color: T.text, fontSize: 13, fontFamily: "inherit", outline: "none" }} />
-              <button onClick={handleSendLink} disabled={sending} style={{ background: T.text, color: T.bg, border: "none", borderRadius: 10, padding: "9px 14px", fontSize: 12.5, fontWeight: 700, cursor: sending ? "default" : "pointer", opacity: sending ? 0.6 : 1, flexShrink: 0, whiteSpace: "nowrap" }}>{sending ? "보내는 중" : "인증 메일 받기"}</button>
+            <div style={{ fontSize: 12.5, color: T.sub, marginTop: 12, lineHeight: 1.6 }}>
+              {email}로 인증 메일을 보냈어요 · 메일함을 확인해주세요
+              <br />
+              <span style={{ color: "#E8A24C" }}>꼭 지금 이 브라우저에서 메일을 열고 링크를 눌러주세요 — 휴대폰이나 다른 브라우저에서 열면 로그인이 안 돼요.</span>
             </div>
+          ) : (
+            <>
+              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="이메일 주소" type="email" style={{ flex: 1, background: T.cardAlt, border: `1px solid ${T.line}`, borderRadius: 10, padding: "9px 12px", color: T.text, fontSize: 13, fontFamily: "inherit", outline: "none" }} />
+                <button onClick={handleSendLink} disabled={sending} style={{ background: T.text, color: T.bg, border: "none", borderRadius: 10, padding: "9px 14px", fontSize: 12.5, fontWeight: 700, cursor: sending ? "default" : "pointer", opacity: sending ? 0.6 : 1, flexShrink: 0, whiteSpace: "nowrap" }}>{sending ? "보내는 중" : "인증 메일 받기"}</button>
+              </div>
+              <div style={{ fontSize: 11.5, color: T.dim, marginTop: 8, lineHeight: 1.5 }}>인증 메일의 링크는 지금 쓰고 있는 이 브라우저에서 열어야 로그인이 완료돼요.</div>
+            </>
           )
         )}
       </div>

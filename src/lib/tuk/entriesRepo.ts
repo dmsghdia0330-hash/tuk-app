@@ -3,7 +3,7 @@ import type { Entry } from "./types";
 
 const LOCAL_KEY = "tuk:entries";
 
-type EntryPatch = Partial<Pick<Entry, "tags" | "risk">>;
+type EntryPatch = Partial<Pick<Entry, "tags" | "risk" | "spendEmotion">>;
 
 function readLocal(): Entry[] {
   if (typeof window === "undefined") return [];
@@ -42,10 +42,11 @@ interface EntryRow {
   tags: string[];
   created_at: string;
   risk: boolean;
+  spend_emotion: Entry["spendEmotion"];
 }
 
 function rowToEntry(row: EntryRow): Entry {
-  return { id: row.id, text: row.text, tags: row.tags, createdAt: row.created_at, risk: row.risk };
+  return { id: row.id, text: row.text, tags: row.tags, createdAt: row.created_at, risk: row.risk, spendEmotion: row.spend_emotion };
 }
 
 export function remoteEntriesRepo(userId: string) {
@@ -54,7 +55,7 @@ export function remoteEntriesRepo(userId: string) {
     load: async (): Promise<Entry[]> => {
       const { data, error } = await supabase
         .from("entries")
-        .select("id, text, tags, created_at, risk")
+        .select("id, text, tags, created_at, risk, spend_emotion")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -68,11 +69,16 @@ export function remoteEntriesRepo(userId: string) {
         tags: entry.tags,
         created_at: entry.createdAt,
         risk: entry.risk,
+        spend_emotion: entry.spendEmotion,
       });
       if (error) throw error;
     },
     update: async (id: string, patch: EntryPatch) => {
-      const { error } = await supabase.from("entries").update(patch).eq("id", id).eq("user_id", userId);
+      const dbPatch: Record<string, unknown> = {};
+      if (patch.tags !== undefined) dbPatch.tags = patch.tags;
+      if (patch.risk !== undefined) dbPatch.risk = patch.risk;
+      if (patch.spendEmotion !== undefined) dbPatch.spend_emotion = patch.spendEmotion;
+      const { error } = await supabase.from("entries").update(dbPatch).eq("id", id).eq("user_id", userId);
       if (error) throw error;
     },
     remove: async (id: string) => {
@@ -97,6 +103,7 @@ export async function migrateLocalEntriesToRemote(userId: string): Promise<void>
     tags: e.tags,
     created_at: e.createdAt,
     risk: e.risk,
+    spend_emotion: e.spendEmotion,
   }));
   const { error } = await supabase.from("entries").insert(rows);
   if (error) throw error;

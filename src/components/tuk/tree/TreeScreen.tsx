@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Heart, PiggyBank, Search, Share2, TreePine, X } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
 import {
@@ -9,9 +9,9 @@ import {
   NEGATIVE_TAGS,
   SPEND_EMOTION,
   SUBTAG_CAT,
-  spendSeed,
 } from "@/lib/tuk/constants";
 import { dayLabelOf, monthKeyOf, monthLabelOf } from "@/lib/tuk/date";
+import { exportTreeImage } from "@/lib/tuk/shareImage";
 import type { CatData, Category } from "@/lib/tuk/types";
 import MiniTree from "./MiniTree";
 import FoodIcon from "./FoodIcon";
@@ -28,6 +28,8 @@ export default function TreeScreen() {
   const [treeBranch, setTreeBranch] = useState<Category | null>(null);
   const [forestView, setForestView] = useState(false);
   const [search, setSearch] = useState("");
+  const [sharing, setSharing] = useState(false);
+  const treeSvgRef = useRef<SVGSVGElement>(null);
 
   // 실제로 기록이 있는 달 + 이번 달을 최신순으로 나열 (하드코딩된 달 목록 대신 데이터 기반)
   const monthsOrder = useMemo(() => {
@@ -119,14 +121,45 @@ export default function TreeScreen() {
   const isCurrentMonth = viewMonth === monthKeyOf(new Date());
   const treeMood = monthEntries.length === 0 ? "empty" : isCurrentMonth && monthEntries.length < 5 ? "growing" : monthEntries.length < 4 ? "quiet" : "full";
 
+  // 이번 달 소비 색달력: 하루 안에 여러 건이면 가장 최근(entries는 최신순) 감정을 쓴다.
+  const spendCalendar = useMemo(() => {
+    const map: Record<number, "필요" | "스트레스" | "충동"> = {};
+    monthEntries.forEach((e) => {
+      if (e.spendEmotion && map[new Date(e.createdAt).getDate()] === undefined) {
+        map[new Date(e.createdAt).getDate()] = e.spendEmotion;
+      }
+    });
+    return map;
+  }, [monthEntries]);
+
+  const [calYear, calMonthNum] = viewMonth.split("-").map(Number);
+  const daysInMonth = new Date(calYear, calMonthNum, 0).getDate();
+  const leadingBlanks = new Date(calYear, calMonthNum - 1, 1).getDay();
+
+  // 전체 기록(최신순) 중 가장 최근 "충동" 소비 이후 이어진 소비 기록 수
   const impulseFree = useMemo(() => {
     let s = 0;
-    for (let d = 30; d >= 1; d--) {
-      if (spendSeed[d] === "충동") break;
-      if (spendSeed[d]) s++;
+    for (const e of entries) {
+      if (!e.spendEmotion) continue;
+      if (e.spendEmotion === "충동") break;
+      s++;
     }
     return s;
-  }, []);
+  }, [entries]);
+
+  const handleShare = async () => {
+    if (!treeSvgRef.current || sharing) return;
+    setSharing(true);
+    try {
+      await exportTreeImage(treeSvgRef.current, monthLabelOf(viewMonth), viewMonth);
+      showToast("나무를 이미지로 저장했어요");
+    } catch (err) {
+      console.error(err);
+      showToast("이미지를 만들지 못했어요");
+    } finally {
+      setSharing(false);
+    }
+  };
 
   return (
     <div style={{ padding: "4px 20px 0" }}>
@@ -219,7 +252,7 @@ export default function TreeScreen() {
             </div>
           </div>
           <div style={{ position: "relative", width: "100%", aspectRatio: "1/1", borderRadius: 18, background: T.treeSky, overflow: "hidden", border: `1px solid ${T.line}`, marginBottom: 10 }}>
-            <svg viewBox="0 0 300 300" style={{ width: "100%", height: "100%" }}>
+            <svg ref={treeSvgRef} viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
               <defs>
                 <radialGradient id="ground" cx="0.5" cy="0.5" r="0.5">
                   <stop offset="0%" stopColor={T.trunk} stopOpacity="0.35" />
@@ -311,7 +344,7 @@ export default function TreeScreen() {
               <div style={{ color: "#C7CAD6" }}>요즘 지친 마음이 좀 자주 보였어요. 판단하려는 건 아니고요. 혹시 버겁다면, 가까운 사람이나 전문가와 이야기 나눠보는 것도 방법이에요.</div>
             </div>
           )}
-          <button onClick={() => showToast("나무를 이미지로 저장했어요 (데모)")} style={{ width: "100%", background: T.text, color: T.bg, border: "none", borderRadius: 12, padding: "13px", fontSize: 13.5, fontWeight: 700, marginBottom: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><Share2 size={15} /> {monthLabelOf(viewMonth)} 나무 공유하기</button>
+          <button onClick={handleShare} disabled={sharing} style={{ width: "100%", background: T.text, color: T.bg, border: "none", borderRadius: 12, padding: "13px", fontSize: 13.5, fontWeight: 700, marginBottom: 20, cursor: sharing ? "default" : "pointer", opacity: sharing ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><Share2 size={15} /> {sharing ? "이미지 만드는 중..." : `${monthLabelOf(viewMonth)} 나무 공유하기`}</button>
         </div>
       )}
 
@@ -333,9 +366,9 @@ export default function TreeScreen() {
                   {["일", "월", "화", "수", "목", "금", "토"].map((d) => <div key={d} style={{ textAlign: "center", fontSize: 11, color: T.dim }}>{d}</div>)}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6 }}>
-                  {Array.from({ length: 1 }).map((_, i) => <div key={"b" + i} />)}
-                  {Array.from({ length: 30 }).map((_, i) => {
-                    const day = i + 1, emo = spendSeed[day], bg = emo ? SPEND_EMOTION[emo].color : EMPTY_DAY, ink = emo ? SPEND_EMOTION[emo].ink : "#5A5560";
+                  {Array.from({ length: leadingBlanks }).map((_, i) => <div key={"b" + i} />)}
+                  {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const day = i + 1, emo = spendCalendar[day], bg = emo ? SPEND_EMOTION[emo].color : EMPTY_DAY, ink = emo ? SPEND_EMOTION[emo].ink : "#5A5560";
                     return <div key={day} style={{ aspectRatio: "1/1", borderRadius: 8, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10.5, fontWeight: 600, color: ink }}>{day}</div>;
                   })}
                 </div>

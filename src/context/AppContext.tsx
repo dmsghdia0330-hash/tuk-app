@@ -117,6 +117,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async (id: string, text: string) => {
       let tags: string[] = [];
       let risk = false;
+      let spendEmotion: Entry["spendEmotion"] = null;
       try {
         const res = await fetch("/api/classify", {
           method: "POST",
@@ -128,14 +129,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         risk = Boolean(data.risk);
         if (!risk && !data.undecided && data.category) {
           tags = Array.isArray(data.subtags) ? data.subtags.slice(0, 2) : [];
+          if (data.category === "소비") {
+            spendEmotion = data.spendEmotion ?? null;
+          }
         }
       } catch (err) {
         console.error(err);
         tags = guessTags(text); // 분류 서버 호출 실패 시 임시 키워드 매칭으로 대체
       }
 
-      setEntries((p) => p.map((e) => (e.id === id ? { ...e, tags, risk } : e)));
-      repo.update(id, { tags, risk }).catch((err) => {
+      setEntries((p) => p.map((e) => (e.id === id ? { ...e, tags, risk, spendEmotion } : e)));
+      repo.update(id, { tags, risk, spendEmotion }).catch((err) => {
         console.error(err);
       });
 
@@ -155,7 +159,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (text: string) => {
       const trimmed = text.trim();
       if (!trimmed) return;
-      const entry: Entry = { id: crypto.randomUUID(), text: trimmed, tags: [], createdAt: new Date().toISOString(), risk: false };
+      const entry: Entry = { id: crypto.randomUUID(), text: trimmed, tags: [], createdAt: new Date().toISOString(), risk: false, spendEmotion: null };
       setEntries((p) => [entry, ...p]);
       repo.insert(entry).catch((err) => {
         console.error(err);

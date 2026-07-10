@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/tuk/rateLimit";
 
 const client = new Anthropic();
 
 const CATEGORY_LIST = ["식단", "감정", "할일", "소비", "관계"] as const;
+const MAX_TEXT_LENGTH = 500;
 
 const SYSTEM_PROMPT = `너는 사용자가 하루 중 아무렇게나 남긴 짧은 기록을 분류하는 역할이야.
 규칙:
@@ -14,32 +16,8 @@ const SYSTEM_PROMPT = `너는 사용자가 하루 중 아무렇게나 남긴 짧
 4. 감정을 단정적으로 진단하지 마. "무기력"처럼 관찰 가능한 상태 태그만 붙여.
 5. 확신이 낮으면(0.6 미만) undecided=true, category=null 로 둬. 억지 분류가 오분류보다 나빠.
 6. 자해·자살·타해를 암시하는 표현이 조금이라도 있으면 risk=true로 표시해. 이건 category와 별개로 항상 확인해.
-7. 출력은 지정한 JSON 스키마만 채워. 설명 문장 금지.`;
-
-async function buildPersonalizationBlock(): Promise<string> {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return "";
-
-    const { data: corrections } = await supabase
-      .from("personalization_map")
-      .select("source_text, tag")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(20);
-
-    if (!corrections || corrections.length === 0) return "";
-
-    const lines = corrections.map((c: { source_text: string; tag: string }) => `- "${c.source_text}" → ${c.tag}`).join("\n");
-    return `\n\n아래는 이 사용자가 과거에 직접 고친 매핑이야. 우선 참고해:\n${lines}`;
-  } catch (err) {
-    console.error("failed to load personalization map:", err);
-    return "";
-  }
-}
+7. category가 "소비"면 spendEmotion도 채워: 필요한 지출로 읽히면 "필요", 스트레스성 지출이면 "스트레스", 충동적인 지출이면 "충동". 소비가 아니면 spendEmotion은 null.
+8. 출력은 지정한 JSON 스키마만 채워. 설명 문장 금지.`;
 
 interface ClassifyResult {
   category: (typeof CATEGORY_LIST)[number] | null;
@@ -48,6 +26,13 @@ interface ClassifyResult {
   confidence: number;
   undecided: boolean;
   risk: boolean;
+  spendEmotion: "필요" | "스트레스" | "충동" | null;
+}
+
+function getClientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0]!.trim();
+  return request.headers.get("x-real-ip") ?? "unknown";
 }
 
 export async function POST(request: Request) {
@@ -60,9 +45,43 @@ export async function POST(request: Request) {
   if (typeof text !== "string" || !text.trim()) {
     return NextResponse.json({ error: "text is required" }, { status: 400 });
   }
+  if (text.length > MAX_TEXT_LENGTH) {
+    return NextResponse.json({ error: "text is too long" }, { status: 400 });
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const rateLimitId = user?.id ?? `ip:${getClientIp(request)}`;
+  const { allowed, retryAfterSeconds } = checkRateLimit(rateLimitId);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "too many requests" },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+    );
+  }
+
+  let personalizationBlock = "";
+  if (user) {
+    try {
+      const { data: corrections } = await supabase
+        .from("personalization_map")
+        .select("source_text, tag")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (corrections && corrections.length > 0) {
+        const lines = corrections.map((c: { source_text: string; tag: string }) => `- "${c.source_text}" → ${c.tag}`).join("\n");
+        personalizationBlock = `\n\n아래는 이 사용자가 과거에 직접 고친 매핑이야. 우선 참고해:\n${lines}`;
+      }
+    } catch (err) {
+      console.error("failed to load personalization map:", err);
+    }
+  }
 
   try {
-    const personalizationBlock = await buildPersonalizationBlock();
     const response = await client.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 500,
@@ -82,8 +101,11 @@ export async function POST(request: Request) {
               confidence: { type: "number" },
               undecided: { type: "boolean" },
               risk: { type: "boolean" },
+              spendEmotion: {
+                anyOf: [{ type: "string", enum: ["필요", "스트레스", "충동"] }, { type: "null" }],
+              },
             },
-            required: ["category", "subtags", "people", "confidence", "undecided", "risk"],
+            required: ["category", "subtags", "people", "confidence", "undecided", "risk", "spendEmotion"],
             additionalProperties: false,
           },
         },
@@ -103,6 +125,7 @@ export async function POST(request: Request) {
       confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0,
       undecided: Boolean(parsed.undecided),
       risk: Boolean(parsed.risk),
+      spendEmotion: parsed.spendEmotion ?? null,
     };
 
     return NextResponse.json(result);
