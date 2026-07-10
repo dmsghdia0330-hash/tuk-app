@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, Download, Shield, Trash2, User } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
@@ -24,6 +24,24 @@ export default function SettingsScreen() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [notifyOn, setNotifyOn] = useState(true);
+
+  // 저장된 알림 설정 복원. localStorage는 서버에 없으므로 마운트 후에만 읽는다
+  // (lazy initializer로 옮기면 hydration 불일치 — AppContext의 welcomeBack과 동일한 이유).
+  useEffect(() => {
+    if (window.localStorage.getItem("tuk:notifyPref") === "off") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 위 주석 참고: 의도된 마운트 후 1회성 setState.
+      setNotifyOn(false);
+    }
+  }, []);
+
+  // setState updater 안에서 localStorage를 건드리면 StrictMode의 이중 호출 때
+  // 부수효과가 두 번 실행되므로, next를 밖에서 계산해 저장한다.
+  const handleToggleNotify = () => {
+    const next = !notifyOn;
+    setNotifyOn(next);
+    window.localStorage.setItem("tuk:notifyPref", next ? "on" : "off");
+  };
 
   const age = calcAge(birthdate);
   const isUnder14 = age !== null && age < 14;
@@ -99,8 +117,8 @@ export default function SettingsScreen() {
       </div>
       <div style={{ background: T.card, borderRadius: 14, padding: "15px 16px", display: "flex", alignItems: "center", gap: 12 }}>
         <Bell size={18} color="#E8A24C" style={{ flexShrink: 0 }} />
-        <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 500 }}>가끔 안부 묻기</div><div style={{ fontSize: 11.5, color: T.sub }}>하루 최대 1번, 예측 못 할 때 · 잔소리 없음</div></div>
-        <div style={{ width: 44, height: 26, borderRadius: 999, background: "#5FD9B4", position: "relative", flexShrink: 0 }}><span style={{ position: "absolute", top: 3, left: 21, width: 20, height: 20, borderRadius: "50%", background: T.text }} /></div>
+        <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 500 }}>가끔 안부 묻기</div><div style={{ fontSize: 11.5, color: T.sub }}>알림 기능은 준비 중이에요 · 켜두면 열리는 대로 적용돼요</div></div>
+        <button onClick={handleToggleNotify} aria-label="안부 알림 켜기/끄기" style={{ width: 44, height: 26, borderRadius: 999, background: notifyOn ? "#5FD9B4" : T.line, position: "relative", flexShrink: 0, border: "none", cursor: "pointer", padding: 0, transition: "background .2s" }}><span style={{ position: "absolute", top: 3, left: notifyOn ? 21 : 3, width: 20, height: 20, borderRadius: "50%", background: T.text, transition: "left .2s" }} /></button>
       </div>
       {/* 테마 선택 */}
       <div style={{ background: T.card, borderRadius: 14, padding: "15px 16px", display: "flex", alignItems: "center", gap: 12 }}>

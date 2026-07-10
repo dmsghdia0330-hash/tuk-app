@@ -9,7 +9,7 @@ import { dayLabelOf } from "@/lib/tuk/date";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { entries, T, theme, signedIn, welcomeBack, todayLeaves, leafPop, aiReaction, throwEntry, removeTag, addTag, deleteEntry } = useTuk();
+  const { entries, T, theme, signedIn, welcomeBack, todayLeaves, leafPop, aiReaction, throwEntry, removeTag, addTag, deleteEntry, showToast } = useTuk();
   const [text, setText] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -89,7 +89,10 @@ export default function HomeScreen() {
         <div style={{ background: T.card, borderRadius: 18, padding: 14, border: `1px dashed ${T.lineSoft}` }}>
           <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="오늘 뭐든 툭..." rows={2} style={{ width: "100%", background: "transparent", border: "none", outline: "none", resize: "none", color: T.text, fontSize: 15, fontFamily: "inherit" }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
-            <div style={{ display: "flex", gap: 14 }}><Camera size={18} color="#8B85A0" /><Mic size={18} color="#8B85A0" /></div>
+            <div style={{ display: "flex", gap: 14 }}>
+              <button onClick={() => showToast("사진으로 던지기는 준비 중이에요")} aria-label="사진으로 던지기 (준비 중)" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}><Camera size={18} color="#8B85A0" /></button>
+              <button onClick={() => showToast("음성으로 던지기는 준비 중이에요")} aria-label="음성으로 던지기 (준비 중)" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}><Mic size={18} color="#8B85A0" /></button>
+            </div>
             <button onClick={handleThrow} style={{ display: "flex", alignItems: "center", gap: 6, background: T.text, color: T.bg, border: "none", borderRadius: 999, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}><Send size={14} /> 던지기</button>
           </div>
         </div>

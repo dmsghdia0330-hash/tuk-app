@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import HomeScreen from "@/components/tuk/home/HomeScreen";
 import { useTuk } from "@/context/AppContext";
 
-export default function HomePage() {
+function HomeGate() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useTuk();
@@ -37,4 +37,14 @@ export default function HomePage() {
 
   if (!ready) return null;
   return <HomeScreen />;
+}
+
+// useSearchParams()는 정적 프리렌더 시 Suspense 경계가 필요하다 (빌드 에러:
+// missing-suspense-with-csr-bailout). 게이트 로직 전체를 Suspense로 감싼다.
+export default function HomePage() {
+  return (
+    <Suspense fallback={null}>
+      <HomeGate />
+    </Suspense>
+  );
 }
