@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Heart, Mic, Send, Sprout, TreeDeciduous, X } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
-import { ALL_SUBTAGS, CATEGORIES, SUBTAG_CAT } from "@/lib/tuk/constants";
+import { ALL_SUBTAGS, CATEGORIES, pastelOf, SUBTAG_CAT } from "@/lib/tuk/constants";
 import { dayGroupLabelOf, dayKeyOf, timeLabelOf } from "@/lib/tuk/date";
 import { compressImage } from "@/lib/tuk/imageUpload";
 
@@ -72,7 +72,7 @@ export default function HomeScreen() {
               <path d="M38 68 Q37 52 38 40 Q39 32 38 26" stroke={T.trunk} strokeWidth="3.5" fill="none" strokeLinecap="round" />
               {todayLeaves.map((lf) => (
                 <circle key={lf.id} cx={38 + lf.x} cy={32 + lf.y} r={lf.id === leafPop ? 6.5 : 4.5}
-                  fill={lf.color} stroke={T.cardAlt} strokeWidth="1"
+                  fill={pastelOf(lf.color, 0.28)} stroke={T.cardAlt} strokeWidth="1"
                   style={{ transition: "r .4s ease", transformOrigin: "center" }}>
                   {lf.id === leafPop && <animate attributeName="r" from="0" to="6.5" dur="0.4s" />}
                 </circle>

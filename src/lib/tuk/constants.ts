@@ -40,6 +40,16 @@ export const SPEND_EMOTION: Record<string, SpendEmotionMeta> = {
 
 export const EMPTY_DAY = "#242424";
 
+// 색을 흰색 쪽으로 섞어 파스텔 톤으로. 나무 잎을 부드럽고 감성적으로 그릴 때 쓴다.
+export function pastelOf(hex: string, amt = 0.5): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const mix = (c: number) => Math.round(c + (255 - c) * amt);
+  return `#${[mix(r), mix(g), mix(b)].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
+}
+
 export const ALL_SUBTAGS = Object.keys(SUBTAG_CAT).filter((t) => t !== "필요소비");
 
 // 소비 색 캘린더 시드 (6월, day -> 감정)
