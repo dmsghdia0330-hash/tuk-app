@@ -38,7 +38,7 @@ export const SPEND_EMOTION: Record<string, SpendEmotionMeta> = {
   충동: { color: "#C0492E", ink: "#FCEAE2", level: 3 },
 };
 
-export const EMPTY_DAY = "#26222E";
+export const EMPTY_DAY = "#242424";
 
 export const ALL_SUBTAGS = Object.keys(SUBTAG_CAT).filter((t) => t !== "필요소비");
 
@@ -54,18 +54,19 @@ export const ONBOARD = [
   { big: "띄엄띄엄 살아도\n기록은 남아요", small: "며칠 빼먹어도 잔소리 없어요.\n한 달에 한 번, 당신이 던진 것들이\n한 그루 나무로 자라나요." },
 ];
 
+// 모노톤 미니멀 (스레드 감성): 그래파이트/화이트 베이스에 색은 콘텐츠(태그·나무)에만.
 export const THEMES: Record<ThemeName, ThemePalette> = {
   dark: {
-    bg: "#15121F", card: "#1E1B2C", cardAlt: "#181523", line: "#2A2540", lineSoft: "#3D3852",
-    text: "#F5F1E8", sub: "#8B85A0", dim: "#655F78", invBg: "#F5F1E8", invText: "#15121F",
-    chipDim: "#2A2540", treeSky: "linear-gradient(180deg,#1B2530 0%,#161B26 60%,#12141C 100%)",
-    trunk: "#4A3B2E", skyInk: "#8FA0B5", fruitStroke: "#12141C",
+    bg: "#101010", card: "#181818", cardAlt: "#141414", line: "#2A2A2A", lineSoft: "#3A3A3A",
+    text: "#F3F5F7", sub: "#8F8F8F", dim: "#5F5F5F", invBg: "#F3F5F7", invText: "#101010",
+    chipDim: "#242424", treeSky: "linear-gradient(180deg,#171A18 0%,#131514 60%,#0F1110 100%)",
+    trunk: "#4A4038", skyInk: "#7E8883", fruitStroke: "#0F1110",
   },
   light: {
-    bg: "#F6F3EE", card: "#FFFFFF", cardAlt: "#EFEBE3", line: "#E4DED3", lineSoft: "#D8D0C2",
-    text: "#2A2620", sub: "#8A8175", dim: "#B0A899", invBg: "#2A2620", invText: "#F6F3EE",
-    chipDim: "#EFEBE3", treeSky: "linear-gradient(180deg,#EAF0EC 0%,#E4EBE6 60%,#DCE6DF 100%)",
-    trunk: "#8A6A4E", skyInk: "#6B8578", fruitStroke: "#FFFFFF",
+    bg: "#FAFAFA", card: "#FFFFFF", cardAlt: "#F2F2F2", line: "#E7E7E7", lineSoft: "#D8D8D8",
+    text: "#0F0F0F", sub: "#8A8A8A", dim: "#B8B8B8", invBg: "#0F0F0F", invText: "#FFFFFF",
+    chipDim: "#F0F0F0", treeSky: "linear-gradient(180deg,#EFF2F0 0%,#EAEEEB 60%,#E3E8E4 100%)",
+    trunk: "#7C6F60", skyInk: "#7E8883", fruitStroke: "#FFFFFF",
   },
 };
 

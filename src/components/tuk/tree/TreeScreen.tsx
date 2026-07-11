@@ -400,7 +400,7 @@ export default function TreeScreen() {
 
           {/* --- 감정 가지: 진짜 기분의 파도 --- */}
           {treeBranch === "감정" && (
-            <div style={{ background: theme === "dark" ? "linear-gradient(180deg,#1B1E33,#181523)" : "linear-gradient(180deg,#EAEEF7,#F0EDE6)", borderRadius: 18, padding: "18px 16px", marginBottom: 14, overflow: "hidden" }}>
+            <div style={{ background: theme === "dark" ? "linear-gradient(180deg,#1A1D2B,#131417)" : "linear-gradient(180deg,#EAEEF7,#F2F4F7)", borderRadius: 18, padding: "18px 16px", marginBottom: 14, overflow: "hidden" }}>
               <div style={{ fontSize: 12, color: T.sub, marginBottom: 14, fontWeight: 700 }}>이번 달 기분의 파도</div>
               {(() => {
                 const moodOf: Record<string, number> = { 기분좋음: 1.1, 카페인: 0, 무기력: -1, 스트레스: -1.1 };

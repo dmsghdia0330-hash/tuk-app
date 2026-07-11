@@ -31,8 +31,8 @@ export default function HomeScreen() {
     <>
       {welcomeBack && !welcomeDismissed && (
         <div style={{ padding: "0 20px 10px" }}>
-          <div style={{ background: theme === "dark" ? "#232038" : "#ECEAF6", borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-            <span style={{ fontSize: 13, color: theme === "dark" ? "#D8D2E8" : "#4A4568" }}>{welcomeBack}</span>
+          <div style={{ background: theme === "dark" ? "#1E1E20" : "#F0F0F2", borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ fontSize: 13, color: theme === "dark" ? "#D6D6D9" : "#48484E" }}>{welcomeBack}</span>
             <button onClick={() => setWelcomeDismissed(true)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0, flexShrink: 0 }}><X size={14} color={T.dim} /></button>
           </div>
         </div>
@@ -47,7 +47,7 @@ export default function HomeScreen() {
 
       {/* 오늘의 작은 나무 — 던질 때마다 잎이 돋음 (즉각 보상) */}
       <div style={{ padding: "0 20px 10px" }}>
-        <div style={{ background: "linear-gradient(180deg,#1D2A22,#181523)", border: `1px solid #2A3A2E`, borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ background: theme === "dark" ? "linear-gradient(180deg,#17211B,#121413)" : "linear-gradient(180deg,#EDF3EE,#F7F9F7)", border: `1px solid ${theme === "dark" ? "#233129" : "#DCE5DE"}`, borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ position: "relative", width: 76, height: 76, flexShrink: 0 }}>
             <svg viewBox="0 0 76 76" style={{ width: "100%", height: "100%" }}>
               <path d="M38 68 Q37 52 38 40 Q39 32 38 26" stroke={T.trunk} strokeWidth="3.5" fill="none" strokeLinecap="round" />
@@ -79,7 +79,7 @@ export default function HomeScreen() {
       {/* 던진 직후 가끔 뜨는 AI 반응 */}
       {aiReaction && (
         <div style={{ padding: "0 20px 10px", animation: "fadeUp .3s ease" }}>
-          <div style={{ background: theme === "dark" ? "#232038" : "#ECEAF6", borderRadius: 14, borderTopLeftRadius: 4, padding: "11px 14px", fontSize: 13.5, color: theme === "dark" ? "#D8D2E8" : "#4A4568", display: "flex", alignItems: "center", gap: 8, maxWidth: "85%" }}>
+          <div style={{ background: theme === "dark" ? "#1E1E20" : "#F0F0F2", borderRadius: 14, borderTopLeftRadius: 4, padding: "11px 14px", fontSize: 13.5, color: theme === "dark" ? "#D6D6D9" : "#48484E", display: "flex", alignItems: "center", gap: 8, maxWidth: "85%" }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: "#9DB4FF" }}>AI</span> {aiReaction}
           </div>
         </div>
@@ -90,8 +90,8 @@ export default function HomeScreen() {
           <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="오늘 뭐든 툭..." rows={2} style={{ width: "100%", background: "transparent", border: "none", outline: "none", resize: "none", color: T.text, fontSize: 15, fontFamily: "inherit" }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
             <div style={{ display: "flex", gap: 14 }}>
-              <button onClick={() => showToast("사진으로 던지기는 준비 중이에요")} aria-label="사진으로 던지기 (준비 중)" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}><Camera size={18} color="#8B85A0" /></button>
-              <button onClick={() => showToast("음성으로 던지기는 준비 중이에요")} aria-label="음성으로 던지기 (준비 중)" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}><Mic size={18} color="#8B85A0" /></button>
+              <button onClick={() => showToast("사진으로 던지기는 준비 중이에요")} aria-label="사진으로 던지기 (준비 중)" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}><Camera size={18} color="#8F8F8F" /></button>
+              <button onClick={() => showToast("음성으로 던지기는 준비 중이에요")} aria-label="음성으로 던지기 (준비 중)" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}><Mic size={18} color="#8F8F8F" /></button>
             </div>
             <button onClick={handleThrow} style={{ display: "flex", alignItems: "center", gap: 6, background: T.text, color: T.bg, border: "none", borderRadius: 999, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}><Send size={14} /> 던지기</button>
           </div>
@@ -114,7 +114,7 @@ export default function HomeScreen() {
           <span style={{ fontSize: 12.5, color: T.sub }}>필터:</span>
           {(() => {
             const cat = entries.find((e) => e.tags.includes(selectedTag))?.category;
-            const c = (cat && CATEGORIES[cat]?.color) || "#8B85A0";
+            const c = (cat && CATEGORIES[cat]?.color) || "#8F8F8F";
             return <span style={{ fontSize: 12.5, color: c, fontWeight: 700 }}>#{selectedTag}</span>;
           })()}
           <button onClick={() => setSelectedTag(null)} style={{ background: "none", border: "none", color: T.dim, fontSize: 12, cursor: "pointer" }}>지우기</button>
@@ -168,7 +168,7 @@ export default function HomeScreen() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                   {e.tags.length > 0 ? e.tags.map((t) => {
-                    const c = (e.category && CATEGORIES[e.category]?.color) || "#8B85A0";
+                    const c = (e.category && CATEGORIES[e.category]?.color) || "#8F8F8F";
                     return <button key={t} onClick={() => setSelectedTag(t)} style={{ fontSize: 11.5, fontWeight: 700, color: c, background: c + "1E", padding: "3px 9px", borderRadius: 999, border: "none", cursor: "pointer" }}>#{t}</button>;
                   }) : <span style={{ fontSize: 11.5, color: T.dim }}>메모</span>}
                 </div>
@@ -184,7 +184,7 @@ export default function HomeScreen() {
                 <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.line}`, animation: "fadeUp .2s ease" }}>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
                     {e.tags.length > 0 ? e.tags.map((t) => {
-                      const c = (e.category && CATEGORIES[e.category]?.color) || "#8B85A0";
+                      const c = (e.category && CATEGORIES[e.category]?.color) || "#8F8F8F";
                       return (
                         <span key={t} style={{ fontSize: 11.5, fontWeight: 700, color: c, background: c + "1E", padding: "3px 6px 3px 9px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4 }}>
                           #{t}
@@ -196,7 +196,7 @@ export default function HomeScreen() {
                   {e.tags.length < 2 && (
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
                       {ALL_SUBTAGS.filter((t) => !e.tags.includes(t)).map((t) => {
-                        const c = CATEGORIES[SUBTAG_CAT[t]]?.color || "#8B85A0";
+                        const c = CATEGORIES[SUBTAG_CAT[t]]?.color || "#8F8F8F";
                         return <button key={t} onClick={() => addTag(e.id, t)} style={{ fontSize: 11.5, color: c, background: "transparent", border: `1px solid ${c}55`, padding: "3px 9px", borderRadius: 999, cursor: "pointer" }}>+ {t}</button>;
                       })}
                     </div>

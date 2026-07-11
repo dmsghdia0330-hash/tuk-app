@@ -23,22 +23,22 @@ export default function GlobalError({
             gap: 14,
             padding: "32px",
             textAlign: "center",
-            background: "#15121F",
-            color: "#F5F1E8",
+            background: "#101010",
+            color: "#F3F5F7",
             fontFamily: "sans-serif",
           }}
         >
           <Sprout size={44} color="#5FD9B4" strokeWidth={1.5} />
           <div style={{ fontSize: 19, fontWeight: 700 }}>잠깐, 뭔가 삐끗했어요</div>
-          <div style={{ fontSize: 13.5, color: "#8B85A0", lineHeight: 1.7, maxWidth: 320 }}>
+          <div style={{ fontSize: 13.5, color: "#8F8F8F", lineHeight: 1.7, maxWidth: 320 }}>
             당신 잘못이 아니에요. 던진 기록은 그대로 있으니 안심하고 다시 시도해주세요.
           </div>
           <button
             onClick={() => unstable_retry()}
             style={{
               marginTop: 8,
-              background: "#F5F1E8",
-              color: "#15121F",
+              background: "#F3F5F7",
+              color: "#101010",
               border: "none",
               borderRadius: 999,
               padding: "11px 22px",

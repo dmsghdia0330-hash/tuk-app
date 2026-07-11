@@ -10,9 +10,9 @@ export async function exportTreeImage(svgEl: SVGSVGElement, monthLabel: string, 
   if (!ctx) throw new Error("canvas 2d context를 만들 수 없어요");
 
   const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, "#1B2530");
-  bg.addColorStop(0.6, "#161B26");
-  bg.addColorStop(1, "#12141C");
+  bg.addColorStop(0, "#171A18");
+  bg.addColorStop(0.6, "#131514");
+  bg.addColorStop(1, "#0F1110");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
@@ -38,11 +38,11 @@ export async function exportTreeImage(svgEl: SVGSVGElement, monthLabel: string, 
   await document.fonts?.ready?.catch(() => {});
 
   ctx.textAlign = "center";
-  ctx.fillStyle = "#F5F1E8";
+  ctx.fillStyle = "#F3F5F7";
   ctx.font = "700 68px 'Nanum Myeongjo', serif";
   ctx.fillText(`${monthLabel}의 나무`, W / 2, H * 0.14);
 
-  ctx.fillStyle = "#8B85A0";
+  ctx.fillStyle = "#8F8F8F";
   ctx.font = "400 30px 'Pretendard', sans-serif";
   ctx.fillText("안 써도 괜찮은 기록 앱, 툭", W / 2, H * 0.945);
 

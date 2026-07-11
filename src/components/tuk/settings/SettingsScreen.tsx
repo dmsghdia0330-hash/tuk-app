@@ -94,7 +94,7 @@ export default function SettingsScreen() {
     <div style={{ padding: "6px 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ background: T.card, borderRadius: 14, padding: "15px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 42, height: 42, borderRadius: "50%", background: T.line, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><User size={20} color="#8B85A0" /></div>
+          <div style={{ width: 42, height: 42, borderRadius: "50%", background: T.line, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><User size={20} color="#8F8F8F" /></div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14.5, fontWeight: 500 }}>{signedIn ? user?.email : "게스트로 쓰는 중"}</div>
             <div style={{ fontSize: 11.5, color: T.sub }}>{signedIn ? "기록이 계정에 안전하게 연결돼 있어요" : "가입하면 기록을 잃어버리지 않아요"}</div>

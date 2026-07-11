@@ -72,5 +72,5 @@ a {
 }
 
 textarea::placeholder {
-  color: #655f78;
+  color: #757575; /* 라이트/다크 양쪽에서 읽히는 중간 그레이 */
 }
