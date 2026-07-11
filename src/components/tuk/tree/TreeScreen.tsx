@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Heart, PiggyBank, Search, Share2, TreePine, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, Moon, PiggyBank, Pin, Search, Share2, Sprout, TreePine, X } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
 import {
   CATEGORIES,
@@ -215,7 +215,7 @@ export default function TreeScreen() {
             ))}
             {/* 미래의 빈 화분 (다음 달 예고) */}
             <div style={{ background: T.cardAlt, border: `1px dashed ${T.line}`, borderRadius: 16, padding: "14px 10px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, minHeight: 150 }}>
-              <span style={{ fontSize: 26, opacity: 0.5 }}>🪴</span>
+              <Sprout size={28} color={T.dim} strokeWidth={1.5} style={{ opacity: 0.7 }} />
               <div style={{ fontSize: 12, color: T.dim, textAlign: "center", lineHeight: 1.5 }}>다음 달 나무는<br />여기서 자라요</div>
             </div>
           </div>
@@ -482,7 +482,7 @@ export default function TreeScreen() {
                     </div>
                     {nightN > 0 && (
                       <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.line}`, display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: T.sub }}>
-                        그중 야식이 {nightN}번이었어요 🌙
+                        그중 야식이 {nightN}번이었어요 <Moon size={13} color="#9DB4FF" style={{ display: "inline", verticalAlign: "-2px" }} />
                       </div>
                     )}
                   </>
@@ -498,7 +498,7 @@ export default function TreeScreen() {
           {treeBranch === "할일" && (
             <div style={{ background: theme === "dark" ? "linear-gradient(135deg,#2A2015,#231A12)" : "linear-gradient(135deg,#E8D9BE,#DFCEAD)", borderRadius: 18, padding: "18px 16px", marginBottom: 14, border: `1px solid ${T.line}` }}>
               <div style={{ fontSize: 12, color: theme === "dark" ? "#C9A876" : "#8A6A3E", marginBottom: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
-                📌 던져둔 것들 · {branchDetail.count}개
+                <Pin size={13} style={{ display: "inline", verticalAlign: "-2px" }} /> 던져둔 것들 · {branchDetail.count}개
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                 {branchDetail.items.length === 0 ? (

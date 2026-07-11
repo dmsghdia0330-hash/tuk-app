@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, Download, Shield, Trash2, User } from "lucide-react";
+import { Bell, Download, Moon, Shield, Sun, Trash2, User } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
 
 function calcAge(birthdate: string): number | null {
@@ -152,7 +152,7 @@ export default function SettingsScreen() {
       </div>
       {/* 테마 선택 */}
       <div style={{ background: T.card, borderRadius: 14, padding: "15px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ fontSize: 18, flexShrink: 0 }}>{theme === "dark" ? "🌙" : "☀️"}</span>
+        {theme === "dark" ? <Moon size={18} color="#9DB4FF" style={{ flexShrink: 0 }} /> : <Sun size={18} color="#E8A24C" style={{ flexShrink: 0 }} />}
         <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 500 }}>화면 테마</div><div style={{ fontSize: 11.5, color: T.sub }}>당신 취향대로 골라요</div></div>
         <div style={{ display: "flex", background: T.chipDim, borderRadius: 999, padding: 3, flexShrink: 0 }}>
           <button onClick={() => setTheme("light")} style={{ background: theme === "light" ? T.invBg : "transparent", color: theme === "light" ? T.invText : T.sub, border: "none", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>라이트</button>

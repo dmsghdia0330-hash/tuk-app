@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Send, LogIn } from "lucide-react";
+import { ChevronRight, Send, LogIn, TreeDeciduous } from "lucide-react";
 import { ONBOARD } from "@/lib/tuk/constants";
 import { outerStyle } from "@/lib/tuk/style";
 import { useTuk } from "@/context/AppContext";
@@ -28,7 +28,7 @@ export default function OnboardingScreen() {
           ))}
         </div>
         <div key={obStep} style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 32px", animation: "fadeUp .4s ease" }}>
-          {last && <div style={{ fontSize: 50, marginBottom: 10, animation: "sway 4s ease-in-out infinite", width: "fit-content" }}>🌳</div>}
+          {last && <div style={{ marginBottom: 14, animation: "sway 4s ease-in-out infinite", width: "fit-content" }}><TreeDeciduous size={56} color="#5FD9B4" strokeWidth={1.4} /></div>}
           <div className="serif" style={{ fontSize: 44, fontWeight: 800, lineHeight: 1.2, whiteSpace: "pre-line", marginBottom: 20 }}>{s.big}</div>
           <div style={{ fontSize: 15, color: T.text, lineHeight: 1.75, whiteSpace: "pre-line" }}>{s.small}</div>
         </div>

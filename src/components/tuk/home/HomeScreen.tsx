@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Heart, Mic, Send, X } from "lucide-react";
+import { Camera, Heart, Mic, Send, Sprout, TreeDeciduous, X } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
 import { ALL_SUBTAGS, CATEGORIES, SUBTAG_CAT } from "@/lib/tuk/constants";
 import { dayGroupLabelOf, dayKeyOf, timeLabelOf } from "@/lib/tuk/date";
@@ -70,7 +70,7 @@ export default function HomeScreen() {
             </div>
           </div>
           <button onClick={() => router.push("/tree")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
-            <span style={{ fontSize: 20 }}>🌳</span>
+            <TreeDeciduous size={22} color="#5FD9B4" strokeWidth={1.8} />
             <span style={{ fontSize: 9.5, color: "#8B9A8E" }}>한 달 나무</span>
           </button>
         </div>
@@ -99,7 +99,7 @@ export default function HomeScreen() {
         {/* 첫 사용자용 예시 칩 (기록 없을 때만) */}
         {entries.length === 0 && (
           <div style={{ marginTop: 10, animation: "fadeUp .4s ease" }}>
-            <div style={{ fontSize: 11.5, color: T.dim, marginBottom: 7 }}>이런 걸 던져보세요 👇</div>
+            <div style={{ fontSize: 11.5, color: T.dim, marginBottom: 7 }}>이런 걸 던져보세요</div>
             <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
               {["점심에 라면 먹음", "오늘 좀 무기력함", "홧김에 또 질렀다", "친구랑 카페 감"].map((ex) => (
                 <button key={ex} onClick={() => setText(ex)} style={{ fontSize: 12.5, color: T.sub, background: T.card, border: `1px solid ${T.line}`, borderRadius: 999, padding: "6px 12px", cursor: "pointer" }}>{ex}</button>
@@ -124,7 +124,7 @@ export default function HomeScreen() {
       <div style={{ padding: "10px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
         {feed.length === 0 && (
           <div style={{ textAlign: "center", padding: "40px 20px", animation: "fadeUp .4s ease" }}>
-            <div style={{ fontSize: 40, marginBottom: 14 }}>🌱</div>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}><Sprout size={44} color="#5FD9B4" strokeWidth={1.5} /></div>
             <div className="serif" style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>첫 씨앗을 심어볼까요?</div>
             <div style={{ fontSize: 13.5, color: T.sub, lineHeight: 1.7 }}>위에 뭐든 하나 던지면 시작이에요.<br />먹은 거, 산 거, 기분... 정말 아무거나요.</div>
           </div>
