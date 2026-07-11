@@ -335,7 +335,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [supabase]
   );
 
-  // 메일 링크 대신 6자리 코드를 직접 입력해 로그인한다. 메일 앱이 링크를
+  // 메일 링크 대신 인증 코드를 직접 입력해 로그인한다. 메일 앱이 링크를
   // 자체 인앱 브라우저로 열어버리면(특히 모바일) PKCE의 "같은 브라우저" 조건이
   // 깨져 링크 클릭이 실패할 수 있는데, 코드 입력은 그 문제와 무관하게 항상 된다.
   const verifyEmailOtp = useCallback(

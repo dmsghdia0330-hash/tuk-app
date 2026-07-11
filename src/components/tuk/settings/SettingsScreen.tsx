@@ -107,13 +107,13 @@ export default function SettingsScreen() {
           sent ? (
             <div style={{ marginTop: 12 }}>
               <div style={{ fontSize: 12.5, color: T.sub, lineHeight: 1.6, marginBottom: 10 }}>
-                {email}로 인증 코드를 보냈어요 · 메일함에서 6자리 코드를 확인해주세요
+                {email}로 인증 코드를 보냈어요 · 메일함에서 코드를 확인해주세요
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <input
                   value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
-                  placeholder="6자리 코드"
+                  onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 10))}
+                  placeholder="인증 코드"
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
@@ -140,7 +140,7 @@ export default function SettingsScreen() {
                 </label>
               )}
               <button onClick={handleSendLink} disabled={sendDisabled} style={{ width: "100%", marginTop: 10, background: T.text, color: T.bg, border: "none", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, fontWeight: 700, cursor: sendDisabled ? "default" : "pointer", opacity: sendDisabled ? 0.5 : 1 }}>{sending ? "보내는 중" : "인증 코드 받기"}</button>
-              <div style={{ fontSize: 11.5, color: T.dim, marginTop: 8, lineHeight: 1.5 }}>메일로 6자리 코드가 가요 · 휴대폰에서도 코드를 입력하면 바로 로그인돼요.</div>
+              <div style={{ fontSize: 11.5, color: T.dim, marginTop: 8, lineHeight: 1.5 }}>메일로 인증 코드가 가요 · 휴대폰에서도 코드를 입력하면 바로 로그인돼요.</div>
             </>
           )
         )}
