@@ -55,12 +55,19 @@ export const ONBOARD = [
 ];
 
 // 모노톤 미니멀 (스레드 감성): 그래파이트/화이트 베이스에 색은 콘텐츠(태그·나무)에만.
+// forest: 깊은 숲 다크그린 베이스 + 따뜻한 크림 — 나무/기록 아이덴티티를 색으로 밀어붙인 안.
 export const THEMES: Record<ThemeName, ThemePalette> = {
   dark: {
     bg: "#101010", card: "#181818", cardAlt: "#141414", line: "#2A2A2A", lineSoft: "#3A3A3A",
     text: "#F3F5F7", sub: "#8F8F8F", dim: "#5F5F5F", invBg: "#F3F5F7", invText: "#101010",
     chipDim: "#242424", treeSky: "linear-gradient(180deg,#171A18 0%,#131514 60%,#0F1110 100%)",
     trunk: "#4A4038", skyInk: "#7E8883", fruitStroke: "#0F1110",
+  },
+  forest: {
+    bg: "#0E1512", card: "#16201B", cardAlt: "#111A15", line: "#24312A", lineSoft: "#33443A",
+    text: "#F2EFE6", sub: "#8FA096", dim: "#5E6F64", invBg: "#F2EFE6", invText: "#0E1512",
+    chipDim: "#1F2B24", treeSky: "linear-gradient(180deg,#14211A 0%,#101B15 60%,#0C1510 100%)",
+    trunk: "#5A4632", skyInk: "#7FA08C", fruitStroke: "#0C1510",
   },
   light: {
     bg: "#FAFAFA", card: "#FFFFFF", cardAlt: "#F2F2F2", line: "#E7E7E7", lineSoft: "#D8D8D8",

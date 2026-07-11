@@ -11,7 +11,7 @@ export interface Entry {
   category: Category | null;
 }
 
-export type ThemeName = "dark" | "light";
+export type ThemeName = "dark" | "forest" | "light";
 
 export interface ThemePalette {
   bg: string;

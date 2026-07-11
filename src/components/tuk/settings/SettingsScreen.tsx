@@ -152,11 +152,12 @@ export default function SettingsScreen() {
       </div>
       {/* 테마 선택 */}
       <div style={{ background: T.card, borderRadius: 14, padding: "15px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-        {theme === "dark" ? <Moon size={18} color="#9DB4FF" style={{ flexShrink: 0 }} /> : <Sun size={18} color="#E8A24C" style={{ flexShrink: 0 }} />}
+        {theme !== "light" ? <Moon size={18} color="#9DB4FF" style={{ flexShrink: 0 }} /> : <Sun size={18} color="#E8A24C" style={{ flexShrink: 0 }} />}
         <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 500 }}>화면 테마</div><div style={{ fontSize: 11.5, color: T.sub }}>당신 취향대로 골라요</div></div>
         <div style={{ display: "flex", background: T.chipDim, borderRadius: 999, padding: 3, flexShrink: 0 }}>
-          <button onClick={() => setTheme("light")} style={{ background: theme === "light" ? T.invBg : "transparent", color: theme === "light" ? T.invText : T.sub, border: "none", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>라이트</button>
-          <button onClick={() => setTheme("dark")} style={{ background: theme === "dark" ? T.invBg : "transparent", color: theme === "dark" ? T.invText : T.sub, border: "none", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>다크</button>
+          <button onClick={() => setTheme("light")} style={{ background: theme === "light" ? T.invBg : "transparent", color: theme === "light" ? T.invText : T.sub, border: "none", borderRadius: 999, padding: "6px 11px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>라이트</button>
+          <button onClick={() => setTheme("dark")} style={{ background: theme === "dark" ? T.invBg : "transparent", color: theme === "dark" ? T.invText : T.sub, border: "none", borderRadius: 999, padding: "6px 11px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>다크</button>
+          <button onClick={() => setTheme("forest")} style={{ background: theme === "forest" ? T.invBg : "transparent", color: theme === "forest" ? T.invText : T.sub, border: "none", borderRadius: 999, padding: "6px 11px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>포레스트</button>
         </div>
       </div>
       <div style={{ background: T.card, borderRadius: 14, padding: "16px", lineHeight: 1.7, fontSize: 13.5 }}>

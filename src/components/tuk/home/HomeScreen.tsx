@@ -31,8 +31,8 @@ export default function HomeScreen() {
     <>
       {welcomeBack && !welcomeDismissed && (
         <div style={{ padding: "0 20px 10px" }}>
-          <div style={{ background: theme === "dark" ? "#1E1E20" : "#F0F0F2", borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-            <span style={{ fontSize: 13, color: theme === "dark" ? "#D6D6D9" : "#48484E" }}>{welcomeBack}</span>
+          <div style={{ background: theme !== "light" ? "#1E1E20" : "#F0F0F2", borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ fontSize: 13, color: theme !== "light" ? "#D6D6D9" : "#48484E" }}>{welcomeBack}</span>
             <button onClick={() => setWelcomeDismissed(true)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0, flexShrink: 0 }}><X size={14} color={T.dim} /></button>
           </div>
         </div>
@@ -47,7 +47,7 @@ export default function HomeScreen() {
 
       {/* 오늘의 작은 나무 — 던질 때마다 잎이 돋음 (즉각 보상) */}
       <div style={{ padding: "0 20px 10px" }}>
-        <div style={{ background: theme === "dark" ? "linear-gradient(180deg,#17211B,#121413)" : "linear-gradient(180deg,#EDF3EE,#F7F9F7)", border: `1px solid ${theme === "dark" ? "#233129" : "#DCE5DE"}`, borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ background: theme !== "light" ? "linear-gradient(180deg,#17211B,#121413)" : "linear-gradient(180deg,#EDF3EE,#F7F9F7)", border: `1px solid ${theme !== "light" ? "#233129" : "#DCE5DE"}`, borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ position: "relative", width: 76, height: 76, flexShrink: 0 }}>
             <svg viewBox="0 0 76 76" style={{ width: "100%", height: "100%" }}>
               <path d="M38 68 Q37 52 38 40 Q39 32 38 26" stroke={T.trunk} strokeWidth="3.5" fill="none" strokeLinecap="round" />
@@ -79,7 +79,7 @@ export default function HomeScreen() {
       {/* 던진 직후 가끔 뜨는 AI 반응 */}
       {aiReaction && (
         <div style={{ padding: "0 20px 10px", animation: "fadeUp .3s ease" }}>
-          <div style={{ background: theme === "dark" ? "#1E1E20" : "#F0F0F2", borderRadius: 14, borderTopLeftRadius: 4, padding: "11px 14px", fontSize: 13.5, color: theme === "dark" ? "#D6D6D9" : "#48484E", display: "flex", alignItems: "center", gap: 8, maxWidth: "85%" }}>
+          <div style={{ background: theme !== "light" ? "#1E1E20" : "#F0F0F2", borderRadius: 14, borderTopLeftRadius: 4, padding: "11px 14px", fontSize: 13.5, color: theme !== "light" ? "#D6D6D9" : "#48484E", display: "flex", alignItems: "center", gap: 8, maxWidth: "85%" }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: "#9DB4FF" }}>AI</span> {aiReaction}
           </div>
         </div>
@@ -145,7 +145,7 @@ export default function HomeScreen() {
                 {dayHeader}
                 <div style={{ background: T.card, borderRadius: 14, padding: "13px 15px", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
                 <div style={{ fontSize: 14.5, lineHeight: 1.5, marginBottom: 10 }}>{e.text}</div>
-                <div style={{ display: "flex", gap: 10, background: theme === "dark" ? "#20222E" : "#EAEDF5", border: `1px solid ${theme === "dark" ? "#2E3346" : "#D5DBEA"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
+                <div style={{ display: "flex", gap: 10, background: theme !== "light" ? "#20222E" : "#EAEDF5", border: `1px solid ${theme !== "light" ? "#2E3346" : "#D5DBEA"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
                   <Heart size={16} color="#7C9EFF" style={{ flexShrink: 0, marginTop: 2 }} />
                   <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.6 }}>
                     많이 힘들었겠어요. 혼자 감당하지 않아도 돼요.<br />

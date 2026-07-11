@@ -344,7 +344,7 @@ export default function TreeScreen() {
             )}
           </div>
           {showGentleNote && (
-            <div style={{ background: theme === "dark" ? "#20222E" : "#EAEDF5", borderRadius: 14, padding: "14px 16px", marginBottom: 12, lineHeight: 1.7, fontSize: 13.5, border: `1px solid ${theme === "dark" ? "#2E3346" : "#D5DBEA"}`, display: "flex", gap: 10 }}>
+            <div style={{ background: theme !== "light" ? "#20222E" : "#EAEDF5", borderRadius: 14, padding: "14px 16px", marginBottom: 12, lineHeight: 1.7, fontSize: 13.5, border: `1px solid ${theme !== "light" ? "#2E3346" : "#D5DBEA"}`, display: "flex", gap: 10 }}>
               <Heart size={18} color="#7C9EFF" style={{ flexShrink: 0, marginTop: 2 }} />
               <div style={{ color: "#C7CAD6" }}>요즘 지친 마음이 좀 자주 보였어요. 판단하려는 건 아니고요. 혹시 버겁다면, 가까운 사람이나 전문가와 이야기 나눠보는 것도 방법이에요.</div>
             </div>
@@ -400,7 +400,7 @@ export default function TreeScreen() {
 
           {/* --- 감정 가지: 진짜 기분의 파도 --- */}
           {treeBranch === "감정" && (
-            <div style={{ background: theme === "dark" ? "linear-gradient(180deg,#1A1D2B,#131417)" : "linear-gradient(180deg,#EAEEF7,#F2F4F7)", borderRadius: 18, padding: "18px 16px", marginBottom: 14, overflow: "hidden" }}>
+            <div style={{ background: theme !== "light" ? "linear-gradient(180deg,#1A1D2B,#131417)" : "linear-gradient(180deg,#EAEEF7,#F2F4F7)", borderRadius: 18, padding: "18px 16px", marginBottom: 14, overflow: "hidden" }}>
               <div style={{ fontSize: 12, color: T.sub, marginBottom: 14, fontWeight: 700 }}>이번 달 기분의 파도</div>
               {(() => {
                 const moodOf: Record<string, number> = { 기분좋음: 1.1, 카페인: 0, 무기력: -1, 스트레스: -1.1 };
@@ -496,8 +496,8 @@ export default function TreeScreen() {
 
           {/* --- 할일 가지: 코르크 메모보드 (포스트잇) --- */}
           {treeBranch === "할일" && (
-            <div style={{ background: theme === "dark" ? "linear-gradient(135deg,#2A2015,#231A12)" : "linear-gradient(135deg,#E8D9BE,#DFCEAD)", borderRadius: 18, padding: "18px 16px", marginBottom: 14, border: `1px solid ${T.line}` }}>
-              <div style={{ fontSize: 12, color: theme === "dark" ? "#C9A876" : "#8A6A3E", marginBottom: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ background: theme !== "light" ? "linear-gradient(135deg,#2A2015,#231A12)" : "linear-gradient(135deg,#E8D9BE,#DFCEAD)", borderRadius: 18, padding: "18px 16px", marginBottom: 14, border: `1px solid ${T.line}` }}>
+              <div style={{ fontSize: 12, color: theme !== "light" ? "#C9A876" : "#8A6A3E", marginBottom: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
                 <Pin size={13} style={{ display: "inline", verticalAlign: "-2px" }} /> 던져둔 것들 · {branchDetail.count}개
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
@@ -514,7 +514,7 @@ export default function TreeScreen() {
                   );
                 })}
               </div>
-              <div style={{ fontSize: 12, color: theme === "dark" ? "#A89070" : "#8A6A3E", marginTop: 16, lineHeight: 1.6, fontStyle: "italic" }}>
+              <div style={{ fontSize: 12, color: theme !== "light" ? "#A89070" : "#8A6A3E", marginTop: 16, lineHeight: 1.6, fontStyle: "italic" }}>
                 완료 체크 같은 건 없어요. 급하면 알아서 하겠죠. 안 급하면 그냥 붙여둬도 되고요.
               </div>
             </div>
