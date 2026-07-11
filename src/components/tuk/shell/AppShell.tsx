@@ -26,8 +26,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
     <div style={outerStyle(T)}>
       <div style={{ width: "100%", maxWidth: 420, position: "relative", paddingBottom: 90 }}>
         <div style={{ padding: "26px 20px 10px" }}>
-          <div className="serif" style={{ fontSize: 30, fontWeight: 800 }}>툭</div>
-          <div style={{ fontSize: 13, color: T.sub, marginTop: 3 }}>{subtitle}</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span className="serif" style={{ fontSize: 31, fontWeight: 700 }}>툭</span>
+            <span className="serif" style={{ fontSize: 13, color: T.dim, letterSpacing: 0 }}>가볍게, 툭</span>
+          </div>
+          <div style={{ fontSize: 13, color: T.sub, marginTop: 4 }}>{subtitle}</div>
         </div>
 
         {toast && <div style={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", background: T.text, color: T.bg, padding: "8px 16px", borderRadius: 999, fontSize: 13, fontWeight: 700, zIndex: 50 }}>{toast}</div>}

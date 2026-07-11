@@ -39,7 +39,7 @@ export async function exportTreeImage(svgEl: SVGSVGElement, monthLabel: string, 
 
   ctx.textAlign = "center";
   ctx.fillStyle = "#F3F5F7";
-  ctx.font = "700 68px 'Nanum Myeongjo', serif";
+  ctx.font = "700 68px 'Gowun Batang', 'Nanum Myeongjo', serif";
   ctx.fillText(`${monthLabel}의 나무`, W / 2, H * 0.14);
 
   ctx.fillStyle = "#8F8F8F";

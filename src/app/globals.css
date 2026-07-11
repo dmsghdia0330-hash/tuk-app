@@ -1,5 +1,5 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
-@import url("https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;700;800&display=swap");
 
 :root {
   --background: #ffffff;
@@ -52,9 +52,10 @@ a {
 }
 
 /* ===== TUK ===== */
+/* 부드러운 명조(고운바탕)로 앱 전체 서체 감성을 따뜻하게. Nanum Myeongjo는 폴백. */
 .serif {
-  font-family: "Nanum Myeongjo", serif;
-  letter-spacing: -0.5px;
+  font-family: "Gowun Batang", "Nanum Myeongjo", serif;
+  letter-spacing: -0.3px;
 }
 
 ::-webkit-scrollbar {
