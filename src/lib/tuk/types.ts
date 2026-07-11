@@ -9,6 +9,10 @@ export interface Entry {
   risk: boolean;
   spendEmotion: SpendEmotion | null;
   category: Category | null;
+  // 화면에 바로 그릴 수 있는 이미지 src. 게스트는 data-URL, 로그인 사용자는
+  // load() 시 만든 서명 URL이 담긴다. 서버 DB엔 이 문자열이 아니라 has_image
+  // 불린만 저장하고, 파일 경로는 {userId}/{entryId}.jpg 로 결정된다.
+  image: string | null;
 }
 
 export type ThemeName = "dark" | "forest" | "light";

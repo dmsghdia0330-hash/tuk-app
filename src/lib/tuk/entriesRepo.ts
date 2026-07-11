@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { dataUrlToBlob, removeAllUserImages, removeEntryImage, signEntryImages, uploadEntryImage } from "./imageUpload";
 import type { Entry } from "./types";
 
 const LOCAL_KEY = "tuk:entries";
@@ -119,10 +120,12 @@ interface EntryRow {
   risk: boolean;
   spend_emotion: Entry["spendEmotion"];
   category: Entry["category"];
+  has_image: boolean;
 }
 
 function rowToEntry(row: EntryRow): Entry {
-  return { id: row.id, text: row.text, tags: row.tags, createdAt: row.created_at, risk: row.risk, spendEmotion: row.spend_emotion, category: row.category };
+  // image는 아래 load()에서 서명 URL로 채운다. 여기선 has_image만 임시 표식으로 둔다.
+  return { id: row.id, text: row.text, tags: row.tags, createdAt: row.created_at, risk: row.risk, spendEmotion: row.spend_emotion, category: row.category, image: null };
 }
 
 export function remoteEntriesRepo(userId: string) {
@@ -131,11 +134,19 @@ export function remoteEntriesRepo(userId: string) {
     load: async (): Promise<Entry[]> => {
       const { data, error } = await supabase
         .from("entries")
-        .select("id, text, tags, created_at, risk, spend_emotion, category")
+        .select("id, text, tags, created_at, risk, spend_emotion, category, has_image")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data as EntryRow[]).map(rowToEntry);
+      const rows = data as EntryRow[];
+      const entries = rows.map(rowToEntry);
+      // 이미지가 있는 기록만 골라 서명 URL을 한 번에 만들어 채운다.
+      const withImage = rows.filter((r) => r.has_image).map((r) => r.id);
+      if (withImage.length > 0) {
+        const signed = await signEntryImages(userId, withImage);
+        for (const e of entries) if (signed[e.id]) e.image = signed[e.id];
+      }
+      return entries;
     },
     insert: async (entry: Entry) => {
       const doInsert = async () => {
@@ -148,6 +159,9 @@ export function remoteEntriesRepo(userId: string) {
           risk: entry.risk,
           spend_emotion: entry.spendEmotion,
           category: entry.category,
+          // 호출자 규약: entry.image가 있으면 스토리지에 이미 업로드된 상태다
+          // (throwEntry/마이그레이션이 업로드 실패 시 image를 null로 만들어 전달).
+          has_image: !!entry.image,
         });
         if (error) throw error;
       };
@@ -181,10 +195,13 @@ export function remoteEntriesRepo(userId: string) {
     remove: async (id: string) => {
       const { error } = await supabase.from("entries").delete().eq("id", id).eq("user_id", userId);
       if (error) throw error;
+      // 사진도 함께 정리 (best-effort — 이미지 없는 기록이면 no-op).
+      removeEntryImage(userId, id).catch((err) => console.error(err));
     },
     removeAll: async () => {
       const { error } = await supabase.from("entries").delete().eq("user_id", userId);
       if (error) throw error;
+      removeAllUserImages(userId).catch((err) => console.error(err));
     },
   };
 }
@@ -193,7 +210,21 @@ export async function migrateLocalEntriesToRemote(userId: string): Promise<void>
   const local = readLocal();
   if (local.length === 0) return;
   const supabase = createClient();
-  const rows = local.map((e) => ({
+  // 게스트가 인라인 data-URL로 갖고 있던 사진을 서버 스토리지로 올린다. 업로드에
+  // 성공한 것만 has_image=true로 두어, load()가 없는 파일을 서명하려다 깨지는 걸 막는다.
+  const uploaded = await Promise.all(
+    local.map(async (e) => {
+      if (!e.image) return false;
+      try {
+        await uploadEntryImage(userId, e.id, dataUrlToBlob(e.image));
+        return true;
+      } catch (err) {
+        console.error(err);
+        return false;
+      }
+    })
+  );
+  const rows = local.map((e, i) => ({
     id: e.id,
     user_id: userId,
     text: e.text,
@@ -202,6 +233,7 @@ export async function migrateLocalEntriesToRemote(userId: string): Promise<void>
     risk: e.risk,
     spend_emotion: e.spendEmotion,
     category: e.category,
+    has_image: uploaded[i],
   }));
   const { error } = await supabase.from("entries").insert(rows);
   if (error) throw error;

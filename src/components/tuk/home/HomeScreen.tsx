@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Heart, Mic, Send, Sprout, TreeDeciduous, X } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
 import { ALL_SUBTAGS, CATEGORIES, SUBTAG_CAT } from "@/lib/tuk/constants";
 import { dayGroupLabelOf, dayKeyOf, timeLabelOf } from "@/lib/tuk/date";
+import { compressImage } from "@/lib/tuk/imageUpload";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -15,11 +16,27 @@ export default function HomeScreen() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+  const [pendingImage, setPendingImage] = useState<string | null>(null); // 던지기 전 붙여둔 사진 미리보기(data-URL)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // 같은 파일 다시 선택해도 change가 뜨도록 초기화
+    if (!file) return;
+    try {
+      const { dataUrl } = await compressImage(file);
+      setPendingImage(dataUrl);
+    } catch (err) {
+      console.error(err);
+      showToast("사진을 불러오지 못했어요");
+    }
+  };
 
   const handleThrow = () => {
-    if (!text.trim()) return;
-    throwEntry(text);
+    if (!text.trim() && !pendingImage) return;
+    throwEntry(text, pendingImage);
     setText("");
+    setPendingImage(null);
   };
 
   const feed = useMemo(
@@ -88,9 +105,17 @@ export default function HomeScreen() {
       <div style={{ padding: "0 20px 8px" }}>
         <div style={{ background: T.card, borderRadius: 18, padding: 14, border: `1px dashed ${T.lineSoft}` }}>
           <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="오늘 뭐든 툭..." rows={2} style={{ width: "100%", background: "transparent", border: "none", outline: "none", resize: "none", color: T.text, fontSize: 15, fontFamily: "inherit" }} />
+          {pendingImage && (
+            <div style={{ position: "relative", width: "fit-content", marginTop: 4, marginBottom: 4 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- data-URL 미리보기라 next/image가 오히려 방해된다 */}
+              <img src={pendingImage} alt="첨부한 사진 미리보기" style={{ maxHeight: 120, maxWidth: "100%", borderRadius: 10, display: "block" }} />
+              <button onClick={() => setPendingImage(null)} aria-label="사진 빼기" style={{ position: "absolute", top: 5, right: 5, width: 24, height: 24, borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={14} color="#fff" /></button>
+            </div>
+          )}
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePickImage} style={{ display: "none" }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
             <div style={{ display: "flex", gap: 14 }}>
-              <button onClick={() => showToast("사진으로 던지기는 준비 중이에요")} aria-label="사진으로 던지기 (준비 중)" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}><Camera size={18} color="#8F8F8F" /></button>
+              <button onClick={() => fileInputRef.current?.click()} aria-label="사진 첨부" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}><Camera size={18} color={pendingImage ? "#5FD9B4" : "#8F8F8F"} /></button>
               <button onClick={() => showToast("음성으로 던지기는 준비 중이에요")} aria-label="음성으로 던지기 (준비 중)" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}><Mic size={18} color="#8F8F8F" /></button>
             </div>
             <button onClick={handleThrow} style={{ display: "flex", alignItems: "center", gap: 6, background: T.text, color: T.bg, border: "none", borderRadius: 999, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}><Send size={14} /> 던지기</button>
@@ -164,7 +189,11 @@ export default function HomeScreen() {
             <div key={e.id} style={{ display: "contents" }}>
               {dayHeader}
               <div style={{ background: T.card, borderRadius: 14, padding: "13px 15px", boxShadow: "0 2px 8px rgba(0,0,0,0.3)", border: expanded ? `1px solid ${T.lineSoft}` : "1px solid transparent" }}>
-              <div onClick={() => { setExpandedId(expanded ? null : e.id); setEditingId(null); }} style={{ fontSize: 14.5, lineHeight: 1.5, marginBottom: 8, cursor: "pointer" }}>{e.text}</div>
+              {e.text && <div onClick={() => { setExpandedId(expanded ? null : e.id); setEditingId(null); }} style={{ fontSize: 14.5, lineHeight: 1.5, marginBottom: 8, cursor: "pointer" }}>{e.text}</div>}
+              {e.image && (
+                /* eslint-disable-next-line @next/next/no-img-element -- 서명 URL/data-URL 이미지라 next/image 최적화 대상이 아니다 */
+                <img src={e.image} alt="첨부한 사진" loading="lazy" style={{ width: "100%", maxHeight: 320, objectFit: "cover", borderRadius: 12, marginBottom: 8, display: "block" }} />
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                   {e.tags.length > 0 ? e.tags.map((t) => {

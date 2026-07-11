@@ -16,6 +16,7 @@ import { AI_REACTIONS, SUBTAG_CAT, THEMES } from "@/lib/tuk/constants";
 import { guessTags } from "@/lib/tuk/classify";
 import { flushPendingWrites, localEntriesRepo, migrateLocalEntriesToRemote, remoteEntriesRepo } from "@/lib/tuk/entriesRepo";
 import { clearPersonalization, recordCorrection } from "@/lib/tuk/personalization";
+import { dataUrlToBlob, uploadEntryImage } from "@/lib/tuk/imageUpload";
 import type { Entry, ThemeName, ThemePalette } from "@/lib/tuk/types";
 
 interface TodayLeaf {
@@ -27,7 +28,7 @@ interface TodayLeaf {
 
 interface AppContextValue {
   entries: Entry[];
-  throwEntry: (text: string) => void;
+  throwEntry: (text: string, image?: string | null) => void;
   removeTag: (id: string, tag: string) => void;
   addTag: (id: string, tag: string) => void;
   deleteEntry: (id: string) => void;
@@ -209,15 +210,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const throwEntry = useCallback(
-    (text: string) => {
+    (text: string, image?: string | null) => {
       const trimmed = text.trim();
-      if (!trimmed) return;
-      const entry: Entry = { id: crypto.randomUUID(), text: trimmed, tags: [], createdAt: new Date().toISOString(), risk: false, spendEmotion: null, category: null };
+      if (!trimmed && !image) return; // 글도 사진도 없으면 던질 게 없다
+      const entry: Entry = { id: crypto.randomUUID(), text: trimmed, tags: [], createdAt: new Date().toISOString(), risk: false, spendEmotion: null, category: null, image: image ?? null };
       setEntries((p) => [entry, ...p]);
-      repo.insert(entry).catch((err) => {
-        console.error(err);
-        showToast("기록을 저장하지 못했어요");
-      });
 
       // 즉각 보상: 오늘 나무에 잎 하나 돋기 (분류 전이라 아직 카테고리 색은 모름)
       const leafId = crypto.randomUUID();
@@ -228,9 +225,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setLeafPop(leafId);
       setTimeout(() => setLeafPop(null), 700);
 
-      classifyEntry(entry.id, trimmed);
+      // 저장은 순서대로: (사진이 있으면) 업로드 → insert → 분류. insert가 분류보다
+      // 먼저 끝나야 분류 결과 update가 빈 곳을 때리지 않는다.
+      (async () => {
+        let entryToStore = entry;
+        const user = latestUserRef.current;
+        if (user && image) {
+          try {
+            await uploadEntryImage(user.id, entry.id, dataUrlToBlob(image));
+          } catch (err) {
+            console.error(err);
+            showToast("사진을 올리지 못했어요");
+            // 업로드 실패 시 image를 비워 서버엔 has_image=false로 남긴다(깨진 이미지 방지).
+            // 화면상 미리보기는 이번 세션 동안만 남는다.
+            entryToStore = { ...entry, image: null };
+          }
+        }
+        if (migrationPromiseRef.current) await migrationPromiseRef.current;
+        const repoNow = latestUserRef.current ? remoteEntriesRepo(latestUserRef.current.id) : localEntriesRepo;
+        try {
+          await repoNow.insert(entryToStore);
+        } catch (err) {
+          console.error(err);
+          showToast("기록을 저장하지 못했어요");
+        }
+        if (trimmed) classifyEntry(entry.id, trimmed);
+      })();
     },
-    [repo, showToast, classifyEntry]
+    [showToast, classifyEntry]
   );
 
   const removeTag = useCallback(
