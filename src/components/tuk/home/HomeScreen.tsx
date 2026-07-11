@@ -66,7 +66,9 @@ export default function HomeScreen() {
       <div style={{ padding: "0 20px 10px" }}>
         <div style={{ background: theme !== "light" ? "linear-gradient(180deg,#17211B,#121413)" : "linear-gradient(180deg,#EDF3EE,#F7F9F7)", border: `1px solid ${theme !== "light" ? "#233129" : "#DCE5DE"}`, borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ position: "relative", width: 76, height: 76, flexShrink: 0 }}>
-            <svg viewBox="0 0 76 76" style={{ width: "100%", height: "100%" }}>
+            {/* 잎 뒤로 은은한 빛무리 — 살아 자라는 느낌 */}
+            <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 50% 42%, rgba(127,176,105,0.18), transparent 62%)", pointerEvents: "none" }} />
+            <svg viewBox="0 0 76 76" style={{ position: "relative", width: "100%", height: "100%", transformOrigin: "50% 90%", animation: "sway 6s ease-in-out infinite" }}>
               <path d="M38 68 Q37 52 38 40 Q39 32 38 26" stroke={T.trunk} strokeWidth="3.5" fill="none" strokeLinecap="round" />
               {todayLeaves.map((lf) => (
                 <circle key={lf.id} cx={38 + lf.x} cy={32 + lf.y} r={lf.id === leafPop ? 6.5 : 4.5}
@@ -168,7 +170,7 @@ export default function HomeScreen() {
             return (
               <div key={e.id} style={{ display: "contents" }}>
                 {dayHeader}
-                <div style={{ background: T.card, borderRadius: 14, padding: "13px 15px", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
+                <div style={{ background: T.card, borderRadius: 16, padding: "14px 16px", boxShadow: "0 1px 2px rgba(0,0,0,0.05), 0 10px 24px rgba(0,0,0,0.07)" }}>
                 <div style={{ fontSize: 14.5, lineHeight: 1.5, marginBottom: 10 }}>{e.text}</div>
                 <div style={{ display: "flex", gap: 10, background: theme !== "light" ? "#20222E" : "#EAEDF5", border: `1px solid ${theme !== "light" ? "#2E3346" : "#D5DBEA"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
                   <Heart size={16} color="#7C9EFF" style={{ flexShrink: 0, marginTop: 2 }} />
@@ -188,7 +190,7 @@ export default function HomeScreen() {
           return (
             <div key={e.id} style={{ display: "contents" }}>
               {dayHeader}
-              <div style={{ background: T.card, borderRadius: 14, padding: "13px 15px", boxShadow: "0 2px 8px rgba(0,0,0,0.3)", border: expanded ? `1px solid ${T.lineSoft}` : "1px solid transparent" }}>
+              <div style={{ background: T.card, borderRadius: 16, padding: "14px 16px", boxShadow: "0 1px 2px rgba(0,0,0,0.05), 0 10px 24px rgba(0,0,0,0.07)", border: expanded ? `1px solid ${T.lineSoft}` : "1px solid transparent" }}>
               {e.text && <div onClick={() => { setExpandedId(expanded ? null : e.id); setEditingId(null); }} style={{ fontSize: 14.5, lineHeight: 1.5, marginBottom: 8, cursor: "pointer" }}>{e.text}</div>}
               {e.image && (
                 /* eslint-disable-next-line @next/next/no-img-element -- 서명 URL/data-URL 이미지라 next/image 최적화 대상이 아니다 */

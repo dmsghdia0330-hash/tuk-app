@@ -15,7 +15,9 @@ const NAV_ITEMS = [
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { T, toast, learnNote } = useTuk();
+  const { T, theme, toast, learnNote } = useTuk();
+  // 화면 위쪽에서 은은하게 번지는 초록빛 — "빛을 받아 자라는" 분위기. 포레스트에선 조금 더 진하게.
+  const glow = theme === "forest" ? "rgba(95,217,180,0.10)" : theme === "light" ? "rgba(95,217,180,0.06)" : "rgba(95,217,180,0.07)";
 
   const subtitle =
     pathname === "/tree" ? "당신이 던진 것들이 자란 모양"
@@ -25,7 +27,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
   return (
     <div style={outerStyle(T)}>
       <div style={{ width: "100%", maxWidth: 420, position: "relative", paddingBottom: 90 }}>
-        <div style={{ padding: "26px 20px 10px" }}>
+        <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 320, pointerEvents: "none", background: `radial-gradient(ellipse 78% 100% at 50% 0%, ${glow}, transparent 70%)` }} />
+        <div style={{ position: "relative", padding: "26px 20px 10px" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
             <span className="serif" style={{ fontSize: 31, fontWeight: 700 }}>툭</span>
             <span className="serif" style={{ fontSize: 13, color: T.dim, letterSpacing: 0 }}>가볍게, 툭</span>
