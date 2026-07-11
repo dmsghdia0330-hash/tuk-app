@@ -68,17 +68,24 @@ export async function uploadEntryImage(userId: string, entryId: string, blob: Bl
 }
 
 // 이미지가 있는 기록들의 서명 URL을 한 번에 만들어 entryId→URL로 돌려준다.
+// 사진 서명이 실패해도 기록 로드 전체가 깨지면 안 되므로, 어떤 오류든 삼키고
+// 빈 맵을 돌려준다(사진만 안 보이고 기록은 정상 표시).
 export async function signEntryImages(userId: string, entryIds: string[]): Promise<Record<string, string>> {
   if (entryIds.length === 0) return {};
-  const supabase = createClient();
-  const paths = entryIds.map((id) => pathOf(userId, id));
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrls(paths, SIGN_TTL);
-  if (error || !data) return {};
-  const map: Record<string, string> = {};
-  data.forEach((d, i) => {
-    if (d.signedUrl && !d.error) map[entryIds[i]] = d.signedUrl;
-  });
-  return map;
+  try {
+    const supabase = createClient();
+    const paths = entryIds.map((id) => pathOf(userId, id));
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrls(paths, SIGN_TTL);
+    if (error || !data) return {};
+    const map: Record<string, string> = {};
+    data.forEach((d, i) => {
+      if (d.signedUrl && !d.error) map[entryIds[i]] = d.signedUrl;
+    });
+    return map;
+  } catch (err) {
+    console.error("failed to sign entry images:", err);
+    return {};
+  }
 }
 
 export async function removeEntryImage(userId: string, entryId: string): Promise<void> {
