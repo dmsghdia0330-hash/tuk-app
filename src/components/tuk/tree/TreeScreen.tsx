@@ -7,7 +7,6 @@ import {
   CATEGORIES,
   EMPTY_DAY,
   NEGATIVE_TAGS,
-  pastelOf,
   SPEND_EMOTION,
 } from "@/lib/tuk/constants";
 import { dayLabelOf, monthKeyOf, monthLabelOf } from "@/lib/tuk/date";
@@ -264,10 +263,6 @@ export default function TreeScreen() {
                   <stop offset="0%" stopColor={T.trunk} stopOpacity="0.35" />
                   <stop offset="100%" stopColor={T.trunk} stopOpacity="0" />
                 </radialGradient>
-                {/* 잎을 수채화처럼 부드럽게 번지게 하는 블러 */}
-                <filter id="softLeaf" x="-40%" y="-40%" width="180%" height="180%">
-                  <feGaussianBlur stdDeviation="4.5" />
-                </filter>
               </defs>
               <ellipse cx="150" cy="286" rx="95" ry="14" fill="url(#ground)" />
               {/* 부드러운 몸통 */}
@@ -278,30 +273,26 @@ export default function TreeScreen() {
                 const bx = 150 + Math.sin(rad) * len, by = 158 - Math.cos(rad) * len * 0.92, branchW = 2.5 + strength * 6.5, subs = Object.entries(data.subs);
                 const midx = 150 + Math.sin(rad) * len * 0.5 + Math.cos(rad) * 10;
                 const midy = 162 - Math.cos(rad) * len * 0.5;
-                const soft = pastelOf(meta.color, 0.5);
                 return (
                   <g key={cat} style={{ cursor: data.total > 0 ? "pointer" : "default" }} onClick={() => { if (data.total > 0) setTreeBranch(cat as Category); }}>
                     <path d={`M150 164 Q${midx} ${midy} ${bx} ${by}`} stroke={T.trunk} strokeWidth={branchW} fill="none" strokeLinecap="round" />
                     {data.total > 0 && (
                       <>
-                        {/* 파스텔 잎: 흐릿하게 번지는 부드러운 뭉게구름 */}
-                        <g filter="url(#softLeaf)">
-                          {[[0, 0, 1], [-1, -0.55, 0.74], [1, -0.4, 0.7], [0.25, 0.85, 0.62], [-0.7, 0.5, 0.58]].map(([dx, dy, sc], k) => {
-                            const R = (17 + strength * 18) * sc;
-                            return <circle key={k} cx={bx + dx * (11 + strength * 8)} cy={by + dy * (11 + strength * 8)} r={R} fill={soft} opacity={0.42} />;
-                          })}
-                        </g>
+                        {[[0, 0, 1], [-1, -0.6, 0.7], [1, -0.4, 0.65], [0.3, 0.9, 0.6], [-0.8, 0.5, 0.55]].map(([dx, dy, sc], k) => {
+                          const R = (14 + strength * 18) * sc;
+                          return <circle key={k} cx={bx + dx * (10 + strength * 8)} cy={by + dy * (10 + strength * 8)} r={R} fill={meta.color} opacity={0.13 + k * 0.01} />;
+                        })}
                         {subs.map(([sub, cnt], i) => {
                           const a = (i / Math.max(subs.length, 1)) * Math.PI * 2 + rad, rr = 9 + strength * 15;
-                          const fx = bx + Math.cos(a) * rr, fy = by + Math.sin(a) * rr, fruitR = 2.6 + Math.min(cnt, 8) * 1.3;
+                          const fx = bx + Math.cos(a) * rr, fy = by + Math.sin(a) * rr, fruitR = 3 + Math.min(cnt, 8) * 1.5;
                           return (
                             <g key={sub}>
-                              <circle cx={fx} cy={fy} r={fruitR} fill={pastelOf(meta.color, 0.2)} stroke="rgba(255,255,255,0.35)" strokeWidth="0.6" />
-                              <circle cx={fx - fruitR * 0.3} cy={fy - fruitR * 0.3} r={fruitR * 0.32} fill="#FFF" opacity="0.5" />
+                              <circle cx={fx} cy={fy} r={fruitR} fill={meta.color} stroke={T.fruitStroke} strokeWidth="1" />
+                              <circle cx={fx - fruitR * 0.32} cy={fy - fruitR * 0.32} r={fruitR * 0.3} fill="#FFF" opacity="0.4" />
                             </g>
                           );
                         })}
-                        <text x={bx} y={by - (22 + strength * 20)} fill={soft} fontSize="11.5" textAnchor="middle" fontWeight="700" style={{ fontFamily: "'Pretendard',sans-serif" }}>{cat}</text>
+                        <text x={bx} y={by - (20 + strength * 20)} fill={meta.color} fontSize="11.5" textAnchor="middle" fontWeight="700" style={{ fontFamily: "'Pretendard',sans-serif" }}>{cat}</text>
                       </>
                     )}
                   </g>
