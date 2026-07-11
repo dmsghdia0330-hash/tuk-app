@@ -72,6 +72,11 @@ a {
   50% { transform: rotate(1.5deg); }
 }
 
+@keyframes popIn {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
 textarea::placeholder {
   color: #757575; /* 라이트/다크 양쪽에서 읽히는 중간 그레이 */
 }

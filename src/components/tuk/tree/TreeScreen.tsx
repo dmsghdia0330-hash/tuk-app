@@ -13,6 +13,7 @@ import { dayLabelOf, monthKeyOf, monthLabelOf } from "@/lib/tuk/date";
 import { exportTreeImage } from "@/lib/tuk/shareImage";
 import type { CatData, Category } from "@/lib/tuk/types";
 import MiniTree from "./MiniTree";
+import PaperTree from "./PaperTree";
 import FoodIcon from "./FoodIcon";
 
 const emptyCatData = (): Record<Category, CatData> => {
@@ -208,7 +209,7 @@ export default function TreeScreen() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             {forest.map((f) => (
               <button key={f.month} onClick={() => { setViewMonth(f.month); setForestView(false); }} style={{ background: T.treeSky, border: `1px solid ${T.line}`, borderRadius: 16, padding: "14px 10px 10px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <MiniTree catData={f.catData} maxCat={f.maxCat} size={100} trunk={T.trunk} fruitStroke={T.fruitStroke} />
+                <MiniTree catData={f.catData} maxCat={f.maxCat} size={100} />
                 <div className="serif" style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{f.label}</div>
                 <div style={{ fontSize: 11, color: T.skyInk }}>{f.count > 0 ? `열매 ${f.count}개` : "쉬어간 달"}</div>
               </button>
@@ -257,48 +258,7 @@ export default function TreeScreen() {
             </div>
           </div>
           <div style={{ position: "relative", width: "100%", aspectRatio: "1/1", borderRadius: 18, background: T.treeSky, overflow: "hidden", border: `1px solid ${T.line}`, marginBottom: 10 }}>
-            <svg ref={treeSvgRef} viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
-              <defs>
-                <radialGradient id="ground" cx="0.5" cy="0.5" r="0.5">
-                  <stop offset="0%" stopColor={T.trunk} stopOpacity="0.35" />
-                  <stop offset="100%" stopColor={T.trunk} stopOpacity="0" />
-                </radialGradient>
-              </defs>
-              <ellipse cx="150" cy="286" rx="95" ry="14" fill="url(#ground)" />
-              {/* 부드러운 몸통 */}
-              <path d="M143 288 Q145 235 147 198 Q148 178 149 162 Q150 158 151 162 Q152 178 153 198 Q155 235 157 288 Z" fill={T.trunk} />
-              {Object.entries(CATEGORIES).map(([cat, meta]) => {
-                const data = catData[cat as Category];
-                const strength = data.total / maxCat, len = 58 + strength * 52, rad = (meta.angle * Math.PI) / 180;
-                const bx = 150 + Math.sin(rad) * len, by = 158 - Math.cos(rad) * len * 0.92, branchW = 2.5 + strength * 6.5, subs = Object.entries(data.subs);
-                const midx = 150 + Math.sin(rad) * len * 0.5 + Math.cos(rad) * 10;
-                const midy = 162 - Math.cos(rad) * len * 0.5;
-                return (
-                  <g key={cat} style={{ cursor: data.total > 0 ? "pointer" : "default" }} onClick={() => { if (data.total > 0) setTreeBranch(cat as Category); }}>
-                    <path d={`M150 164 Q${midx} ${midy} ${bx} ${by}`} stroke={T.trunk} strokeWidth={branchW} fill="none" strokeLinecap="round" />
-                    {data.total > 0 && (
-                      <>
-                        {[[0, 0, 1], [-1, -0.6, 0.7], [1, -0.4, 0.65], [0.3, 0.9, 0.6], [-0.8, 0.5, 0.55]].map(([dx, dy, sc], k) => {
-                          const R = (14 + strength * 18) * sc;
-                          return <circle key={k} cx={bx + dx * (10 + strength * 8)} cy={by + dy * (10 + strength * 8)} r={R} fill={meta.color} opacity={0.13 + k * 0.01} />;
-                        })}
-                        {subs.map(([sub, cnt], i) => {
-                          const a = (i / Math.max(subs.length, 1)) * Math.PI * 2 + rad, rr = 9 + strength * 15;
-                          const fx = bx + Math.cos(a) * rr, fy = by + Math.sin(a) * rr, fruitR = 3 + Math.min(cnt, 8) * 1.5;
-                          return (
-                            <g key={sub}>
-                              <circle cx={fx} cy={fy} r={fruitR} fill={meta.color} stroke={T.fruitStroke} strokeWidth="1" />
-                              <circle cx={fx - fruitR * 0.32} cy={fy - fruitR * 0.32} r={fruitR * 0.3} fill="#FFF" opacity="0.4" />
-                            </g>
-                          );
-                        })}
-                        <text x={bx} y={by - (20 + strength * 20)} fill={meta.color} fontSize="11.5" textAnchor="middle" fontWeight="700" style={{ fontFamily: "'Pretendard',sans-serif" }}>{cat}</text>
-                      </>
-                    )}
-                  </g>
-                );
-              })}
-            </svg>
+            <PaperTree ref={treeSvgRef} catData={catData} maxCat={maxCat} showLabels onBranch={(c) => setTreeBranch(c)} />
             <div className="serif" style={{ position: "absolute", bottom: 10, left: 0, right: 0, textAlign: "center", fontSize: 13.5, color: T.skyInk, padding: "0 20px" }}>
               {treeMood === "empty" && "이 달은 이렇게 쉬어갔네요"}
               {treeMood === "growing" && "아직 씨앗이에요. 급할 거 없어요."}

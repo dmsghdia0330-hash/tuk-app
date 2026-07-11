@@ -7,10 +7,11 @@ import { useTuk } from "@/context/AppContext";
 import { ALL_SUBTAGS, CATEGORIES, SUBTAG_CAT } from "@/lib/tuk/constants";
 import { dayGroupLabelOf, dayKeyOf, timeLabelOf } from "@/lib/tuk/date";
 import { compressImage } from "@/lib/tuk/imageUpload";
+import { fanLeaves } from "@/components/tuk/tree/PaperTree";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { entries, T, theme, signedIn, welcomeBack, todayLeaves, leafPop, aiReaction, throwEntry, removeTag, addTag, deleteEntry, showToast } = useTuk();
+  const { entries, T, theme, signedIn, welcomeBack, todayLeaves, aiReaction, throwEntry, removeTag, addTag, deleteEntry, showToast } = useTuk();
   const [text, setText] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -69,15 +70,18 @@ export default function HomeScreen() {
             {/* 잎 뒤로 은은한 빛무리 — 살아 자라는 느낌 */}
             <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 50% 42%, rgba(127,176,105,0.18), transparent 62%)", pointerEvents: "none" }} />
             <svg viewBox="0 0 76 76" style={{ position: "relative", width: "100%", height: "100%", transformOrigin: "50% 90%", animation: "sway 6s ease-in-out infinite" }}>
-              <path d="M38 68 Q37 52 38 40 Q39 32 38 26" stroke={T.trunk} strokeWidth="3.5" fill="none" strokeLinecap="round" />
-              {todayLeaves.map((lf) => (
-                <circle key={lf.id} cx={38 + lf.x} cy={32 + lf.y} r={lf.id === leafPop ? 6.5 : 4.5}
-                  fill={lf.color} stroke={T.cardAlt} strokeWidth="1"
-                  style={{ transition: "r .4s ease", transformOrigin: "center" }}>
-                  {lf.id === leafPop && <animate attributeName="r" from="0" to="6.5" dur="0.4s" />}
-                </circle>
-              ))}
-              {todayLeaves.length === 0 && <circle cx="38" cy="26" r="3" fill="#3A4A3E" />}
+              {/* 크림 종이 줄기 */}
+              <path d="M34.5 71 Q35.5 54 36.8 42 Q37.2 38.5 38 38.5 Q38.8 38.5 39.2 42 Q40.5 54 41.5 71 Z" fill="#E9E0CC" />
+              <path d="M38 38.5 Q38.8 38.5 39.2 42 Q40.5 54 41.5 71 L39.6 71 Q38.8 54 37.8 42 Q37.4 38.7 38 38.5 Z" fill="#D4C6A8" />
+              {todayLeaves.length === 0 ? (
+                <circle cx="38" cy="35" r="3" fill="#6B7A63" />
+              ) : (
+                <g key={todayLeaves.length} style={{ transformBox: "fill-box", transformOrigin: "center", animation: "popIn .4s ease" }}>
+                  {fanLeaves(38, 41, 0, 74, Math.min(todayLeaves.length, 8), 20 + Math.min(todayLeaves.length, 8) * 1.5, 3, 1).map((l, i) => (
+                    <rect key={i} x={l.x} y={l.y} width={l.w} height={l.h} rx={l.rx} transform={l.transform} fill="#7FB069" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5" />
+                  ))}
+                </g>
+              )}
             </svg>
           </div>
           <div style={{ flex: 1 }}>
