@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Camera, Heart, Mic, Send, X } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
 import { ALL_SUBTAGS, CATEGORIES, SUBTAG_CAT } from "@/lib/tuk/constants";
-import { dayLabelOf } from "@/lib/tuk/date";
+import { dayGroupLabelOf, dayKeyOf, timeLabelOf } from "@/lib/tuk/date";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -129,11 +129,21 @@ export default function HomeScreen() {
             <div style={{ fontSize: 13.5, color: T.sub, lineHeight: 1.7 }}>위에 뭐든 하나 던지면 시작이에요.<br />먹은 거, 산 거, 기분... 정말 아무거나요.</div>
           </div>
         )}
-        {feed.map((e) => {
+        {feed.map((e, i) => {
           const expanded = expandedId === e.id, editing = editingId === e.id;
+          // 날짜가 바뀌는 지점(피드는 최신순)에 그룹 헤더를 끼워 넣는다 — 스레드 피드 감각
+          const showDayHeader = i === 0 || dayKeyOf(e.createdAt) !== dayKeyOf(feed[i - 1].createdAt);
+          const dayHeader = showDayHeader ? (
+            <div key={`day-${e.id}`} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: i === 0 ? 0 : 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: T.sub, flexShrink: 0 }}>{dayGroupLabelOf(e.createdAt)}</span>
+              <div style={{ flex: 1, height: 1, background: T.line }} />
+            </div>
+          ) : null;
           if (e.risk) {
             return (
-              <div key={e.id} style={{ background: T.card, borderRadius: 14, padding: "13px 15px", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
+              <div key={e.id} style={{ display: "contents" }}>
+                {dayHeader}
+                <div style={{ background: T.card, borderRadius: 14, padding: "13px 15px", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
                 <div style={{ fontSize: 14.5, lineHeight: 1.5, marginBottom: 10 }}>{e.text}</div>
                 <div style={{ display: "flex", gap: 10, background: theme === "dark" ? "#20222E" : "#EAEDF5", border: `1px solid ${theme === "dark" ? "#2E3346" : "#D5DBEA"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
                   <Heart size={16} color="#7C9EFF" style={{ flexShrink: 0, marginTop: 2 }} />
@@ -143,14 +153,17 @@ export default function HomeScreen() {
                   </div>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 11, color: T.dim }}>{dayLabelOf(e.createdAt)}</span>
+                  <span style={{ fontSize: 11, color: T.dim }}>{timeLabelOf(e.createdAt)}</span>
                   <button onClick={() => deleteEntry(e.id)} style={{ background: "none", border: "none", color: T.dim, fontSize: 11.5, cursor: "pointer" }}>지우기</button>
+                </div>
                 </div>
               </div>
             );
           }
           return (
-            <div key={e.id} style={{ background: T.card, borderRadius: 14, padding: "13px 15px", boxShadow: "0 2px 8px rgba(0,0,0,0.3)", border: expanded ? `1px solid ${T.lineSoft}` : "1px solid transparent" }}>
+            <div key={e.id} style={{ display: "contents" }}>
+              {dayHeader}
+              <div style={{ background: T.card, borderRadius: 14, padding: "13px 15px", boxShadow: "0 2px 8px rgba(0,0,0,0.3)", border: expanded ? `1px solid ${T.lineSoft}` : "1px solid transparent" }}>
               <div onClick={() => { setExpandedId(expanded ? null : e.id); setEditingId(null); }} style={{ fontSize: 14.5, lineHeight: 1.5, marginBottom: 8, cursor: "pointer" }}>{e.text}</div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
@@ -159,7 +172,7 @@ export default function HomeScreen() {
                     return <button key={t} onClick={() => setSelectedTag(t)} style={{ fontSize: 11.5, fontWeight: 700, color: c, background: c + "1E", padding: "3px 9px", borderRadius: 999, border: "none", cursor: "pointer" }}>#{t}</button>;
                   }) : <span style={{ fontSize: 11.5, color: T.dim }}>메모</span>}
                 </div>
-                <span style={{ fontSize: 11, color: T.dim }}>{dayLabelOf(e.createdAt)}</span>
+                <span style={{ fontSize: 11, color: T.dim }}>{timeLabelOf(e.createdAt)}</span>
               </div>
               {expanded && !editing && (
                 <div style={{ display: "flex", gap: 8, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.line}`, animation: "fadeUp .2s ease" }}>
@@ -193,6 +206,7 @@ export default function HomeScreen() {
                   </div>
                 </div>
               )}
+              </div>
             </div>
           );
         })}
