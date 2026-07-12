@@ -23,8 +23,8 @@ const SYSTEM_PROMPT = `너는 사용자가 하루 중 아무렇게나 남긴 짧
 - 건강: 몸·건강 상태 (생리, 병원, 운동, 아픔, 감기, 수면 등)
 
 규칙:
-1. category는 위 정의 중 가장 자연스러운 하나. 여섯 어디에도 자연스럽지 않으면 절대 억지로 넣지 말고 category=null, undecided=true. 오분류가 미분류보다 나쁘다.
-2. category를 정했으면 subtags는 반드시 그 카테고리 정의에 속하는 것만 최대 2개. 다른 카테고리의 태그를 섞지 마. (예: category가 관계인데 "기분좋음"처럼 감정 태그를 붙이지 마 — 그런 경우엔 감정이 핵심이면 category를 감정으로 바꿔.) 억지로 두 개 채우지 말고 핵심만.
+1. category는 이 기록의 '가장 중심이 되는' 한 가지. 여섯 어디에도 자연스럽지 않으면 절대 억지로 넣지 말고 category=null, undecided=true. 오분류가 미분류보다 나쁘다.
+2. subtags는 이 기록을 나타내는 짧은 명사 태그를 최대 4개까지. 한 기록이 여러 측면을 담으면 서로 다른 카테고리의 태그가 섞여도 좋다 (예: "생리 2일차 힘들다" → ["생리", "무기력"], "친구랑 놀아서 기분좋음" → ["친구", "기분좋음"]). 다만 억지로 채우지 말고 실제로 드러난 핵심만.
 3. 사람(이름/호칭: 엄마, 팀장, 지수 등)이 등장하면 people에 원문 표기 그대로 넣어.
 4. 감정을 단정적으로 진단하지 마. "무기력"처럼 관찰 가능한 상태 태그만 붙여.
 5. 확신이 낮으면(0.6 미만) undecided=true, category=null.
@@ -133,7 +133,7 @@ export async function POST(request: Request) {
 
     const result: ClassifyResult = {
       category: parsed.category ?? null,
-      subtags: Array.isArray(parsed.subtags) ? parsed.subtags.slice(0, 2) : [],
+      subtags: Array.isArray(parsed.subtags) ? parsed.subtags.slice(0, 4) : [],
       people: Array.isArray(parsed.people) ? parsed.people : [],
       confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0,
       undecided: Boolean(parsed.undecided),

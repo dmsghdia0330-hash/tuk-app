@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Heart, Moon, PiggyBank, Pin, Search, Share2, Sprout, TreePine, X } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
 import {
+  catOfTag,
   CATEGORIES,
   EMPTY_DAY,
   NEGATIVE_TAGS,
@@ -51,11 +52,15 @@ export default function TreeScreen() {
     monthEntries.forEach((e) => e.tags.forEach((t) => (m[t] = (m[t] || 0) + 1)));
     return m;
   }, [monthEntries]);
+  // 태그는 각자 제 카테고리(catOfTag)로 집계된다. 그래서 한 기록의 태그들이
+  // 서로 다른 가지에 걸릴 수 있다 (생리→건강, 무기력→감정).
   const tagCategory = useMemo(() => {
     const m: Record<string, Category> = {};
     monthEntries.forEach((e) => {
-      if (!e.category) return;
-      e.tags.forEach((t) => (m[t] = e.category as Category));
+      e.tags.forEach((t) => {
+        const c = catOfTag(t, e.category);
+        if (c) m[t] = c;
+      });
     });
     return m;
   }, [monthEntries]);
@@ -64,10 +69,11 @@ export default function TreeScreen() {
   const catData = useMemo(() => {
     const m = emptyCatData();
     monthEntries.forEach((e) => {
-      if (!e.category) return;
       e.tags.forEach((t) => {
-        m[e.category as Category].total += 1;
-        m[e.category as Category].subs[t] = (m[e.category as Category].subs[t] || 0) + 1;
+        const c = catOfTag(t, e.category);
+        if (!c) return;
+        m[c].total += 1;
+        m[c].subs[t] = (m[c].subs[t] || 0) + 1;
       });
     });
     return m;
@@ -94,10 +100,11 @@ export default function TreeScreen() {
       const es = entries.filter((e) => monthKeyOf(e.createdAt) === mon);
       const cd = emptyCatData();
       es.forEach((e) => {
-        if (!e.category) return;
         e.tags.forEach((t) => {
-          cd[e.category as Category].total += 1;
-          cd[e.category as Category].subs[t] = (cd[e.category as Category].subs[t] || 0) + 1;
+          const c = catOfTag(t, e.category);
+          if (!c) return;
+          cd[c].total += 1;
+          cd[c].subs[t] = (cd[c].subs[t] || 0) + 1;
         });
       });
       const mx = Math.max(...Object.values(cd).map((c) => c.total), 1);
@@ -115,9 +122,12 @@ export default function TreeScreen() {
   // 가지별 상세 분석 데이터
   const branchDetail = useMemo(() => {
     if (!treeBranch) return null;
-    const items = monthEntries.filter((e) => e.category === treeBranch);
+    // 이 가지에 속하는 태그를 하나라도 가진 기록. (한 기록이 여러 가지에 나올 수 있다.)
+    const items = monthEntries.filter((e) => e.tags.some((t) => catOfTag(t, e.category) === treeBranch));
     const subCounts: Record<string, number> = {};
-    items.forEach((e) => e.tags.forEach((t) => (subCounts[t] = (subCounts[t] || 0) + 1)));
+    items.forEach((e) => e.tags.forEach((t) => {
+      if (catOfTag(t, e.category) === treeBranch) subCounts[t] = (subCounts[t] || 0) + 1;
+    }));
     return { items, subCounts, count: items.length };
   }, [treeBranch, monthEntries]);
 
@@ -192,7 +202,7 @@ export default function TreeScreen() {
               <div key={e.id} style={{ background: T.card, borderRadius: 12, padding: "12px 14px" }}>
                 <div style={{ fontSize: 13.5, lineHeight: 1.5, marginBottom: 6 }}>{e.text}</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ display: "flex", gap: 5 }}>{e.tags.map((t) => { const c = (e.category && CATEGORIES[e.category]?.color) || T.sub; return <span key={t} style={{ fontSize: 11, fontWeight: 700, color: c, background: c + "1E", padding: "2px 8px", borderRadius: 999 }}>#{t}</span>; })}</div>
+                  <div style={{ display: "flex", gap: 5 }}>{e.tags.map((t) => { const tc = catOfTag(t, e.category); const c = (tc && CATEGORIES[tc]?.color) || T.sub; return <span key={t} style={{ fontSize: 11, fontWeight: 700, color: c, background: c + "1E", padding: "2px 8px", borderRadius: 999 }}>#{t}</span>; })}</div>
                   <span style={{ fontSize: 11, color: T.dim }}>{monthLabelOf(monthKeyOf(e.createdAt))} · {dayLabelOf(e.createdAt)}</span>
                 </div>
               </div>
@@ -569,7 +579,7 @@ export default function TreeScreen() {
               <div key={e.id} style={{ background: T.card, borderRadius: 12, padding: "12px 14px" }}>
                 <div style={{ fontSize: 13.5, lineHeight: 1.5, marginBottom: 6 }}>{e.text}</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ display: "flex", gap: 5 }}>{e.tags.map((t) => { const c = CATEGORIES[treeBranch].color; return <span key={t} style={{ fontSize: 11, fontWeight: 700, color: c, background: c + "1E", padding: "2px 8px", borderRadius: 999 }}>#{t}</span>; })}</div>
+                  <div style={{ display: "flex", gap: 5 }}>{e.tags.filter((t) => catOfTag(t, e.category) === treeBranch).map((t) => { const c = CATEGORIES[treeBranch].color; return <span key={t} style={{ fontSize: 11, fontWeight: 700, color: c, background: c + "1E", padding: "2px 8px", borderRadius: 999 }}>#{t}</span>; })}</div>
                   <span style={{ fontSize: 11, color: T.dim }}>{dayLabelOf(e.createdAt)}</span>
                 </div>
               </div>

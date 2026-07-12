@@ -174,7 +174,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const data = await res.json();
         risk = Boolean(data.risk);
         if (!risk && !data.undecided && data.category) {
-          tags = Array.isArray(data.subtags) ? data.subtags.slice(0, 2) : [];
+          tags = Array.isArray(data.subtags) ? data.subtags.slice(0, 4) : [];
           category = data.category;
           if (data.category === "소비") {
             spendEmotion = data.spendEmotion ?? null;
@@ -277,12 +277,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       let sourceText: string | null = null;
       setEntries((p) => {
         const next = p.map((e) => {
-          if (e.id === id && !e.tags.includes(tag) && e.tags.length < 2) {
+          if (e.id === id && !e.tags.includes(tag) && e.tags.length < 4) {
             sourceText = e.text;
-            // 사용자가 직접 고른 태그는 강한 신호다. 그 태그의 카테고리가 분명하면
-            // 그걸 우선 적용해, "감정 태그를 달았는데 관계 가지에 남는" 문제를 막는다.
-            // (분명하지 않은 태그면 기존 category를 유지.)
-            const category = SUBTAG_CAT[tag] ?? e.category ?? null;
+            // 태그는 화면에서 각자 제 카테고리 가지에 걸린다(catOfTag). 그래서 여기선
+            // 기록의 대표 category는 비어있을 때만 이 태그로 채우고, 이미 있으면 유지한다.
+            const category = e.category ?? SUBTAG_CAT[tag] ?? null;
             return { ...e, tags: [...e.tags, tag], category };
           }
           return e;

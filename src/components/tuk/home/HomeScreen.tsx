@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Heart, Mic, Send, Sprout, TreeDeciduous, X } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
-import { ALL_SUBTAGS, CATEGORIES, SUBTAG_CAT } from "@/lib/tuk/constants";
+import { ALL_SUBTAGS, catOfTag, CATEGORIES, SUBTAG_CAT } from "@/lib/tuk/constants";
 import { dayGroupLabelOf, dayKeyOf, timeLabelOf } from "@/lib/tuk/date";
 import { compressImage } from "@/lib/tuk/imageUpload";
 
@@ -140,7 +140,8 @@ export default function HomeScreen() {
         <div style={{ padding: "0 20px 4px", display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 12.5, color: T.sub }}>필터:</span>
           {(() => {
-            const cat = entries.find((e) => e.tags.includes(selectedTag))?.category;
+            const fallback = entries.find((e) => e.tags.includes(selectedTag))?.category ?? null;
+            const cat = catOfTag(selectedTag, fallback);
             const c = (cat && CATEGORIES[cat]?.color) || "#8F8F8F";
             return <span style={{ fontSize: 12.5, color: c, fontWeight: 700 }}>#{selectedTag}</span>;
           })()}
@@ -199,7 +200,8 @@ export default function HomeScreen() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                   {e.tags.length > 0 ? e.tags.map((t) => {
-                    const c = (e.category && CATEGORIES[e.category]?.color) || "#8F8F8F";
+                    const tc = catOfTag(t, e.category);
+                    const c = (tc && CATEGORIES[tc]?.color) || "#8F8F8F";
                     return <button key={t} onClick={() => setSelectedTag(t)} style={{ fontSize: 11.5, fontWeight: 700, color: c, background: c + "1E", padding: "3px 9px", borderRadius: 999, border: "none", cursor: "pointer" }}>#{t}</button>;
                   }) : <span style={{ fontSize: 11.5, color: T.dim }}>메모</span>}
                 </div>
@@ -215,7 +217,8 @@ export default function HomeScreen() {
                 <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.line}`, animation: "fadeUp .2s ease" }}>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
                     {e.tags.length > 0 ? e.tags.map((t) => {
-                      const c = (e.category && CATEGORIES[e.category]?.color) || "#8F8F8F";
+                      const tc = catOfTag(t, e.category);
+                      const c = (tc && CATEGORIES[tc]?.color) || "#8F8F8F";
                       return (
                         <span key={t} style={{ fontSize: 11.5, fontWeight: 700, color: c, background: c + "1E", padding: "3px 6px 3px 9px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4 }}>
                           #{t}
@@ -224,7 +227,7 @@ export default function HomeScreen() {
                       );
                     }) : <span style={{ fontSize: 11.5, color: T.dim }}>태그 없이 메모로 둬도 괜찮아요</span>}
                   </div>
-                  {e.tags.length < 2 && (
+                  {e.tags.length < 4 && (
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
                       {ALL_SUBTAGS.filter((t) => !e.tags.includes(t)).map((t) => {
                         const c = CATEGORIES[SUBTAG_CAT[t]]?.color || "#8F8F8F";
