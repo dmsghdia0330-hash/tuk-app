@@ -317,11 +317,11 @@ export default function TreeScreen() {
             </div>
           </div>
 
-          {/* 가지 바로가기 칩 (한 줄 가로 스크롤) */}
+          {/* 가지 바로가기 칩 (여러 줄로 감쌈 — 카테고리가 늘어도 다 보이게) */}
           {monthEntries.length > 0 && (
-            <div style={{ display: "flex", gap: 7, overflowX: "auto", marginBottom: 14, paddingBottom: 2, WebkitOverflowScrolling: "touch" }}>
+            <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 14 }}>
               {Object.entries(CATEGORIES).filter(([c]) => catData[c as Category].total > 0).map(([cat, meta]) => (
-                <button key={cat} onClick={() => setTreeBranch(cat as Category)} style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 5, background: T.card, border: `1px solid ${meta.color}44`, borderRadius: 999, padding: "7px 12px", fontSize: 12.5, color: T.text, cursor: "pointer", whiteSpace: "nowrap" }}>
+                <button key={cat} onClick={() => setTreeBranch(cat as Category)} style={{ display: "flex", alignItems: "center", gap: 5, background: T.card, border: `1px solid ${meta.color}44`, borderRadius: 999, padding: "7px 12px", fontSize: 12.5, color: T.text, cursor: "pointer", whiteSpace: "nowrap" }}>
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: meta.color }} />{cat} <span style={{ color: T.dim }}>{catData[cat as Category].total}</span>
                 </button>
               ))}
