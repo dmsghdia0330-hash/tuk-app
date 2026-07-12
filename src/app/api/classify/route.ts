@@ -2,10 +2,14 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/tuk/rateLimit";
+import { CATEGORIES } from "@/lib/tuk/constants";
+import type { Category } from "@/lib/tuk/types";
 
 const client = new Anthropic();
 
-const CATEGORY_LIST = ["식단", "감정", "할일", "소비", "관계", "건강"] as const;
+// 카테고리 목록은 constants의 CATEGORIES 한 곳에서만 정의한다. 카테고리를 늘리려면
+// 거기(색/각도)와 아래 프롬프트 설명만 고치면 되고, DB 변경은 필요 없다.
+const CATEGORY_LIST = Object.keys(CATEGORIES) as Category[];
 const MAX_TEXT_LENGTH = 500;
 
 const SYSTEM_PROMPT = `너는 사용자가 하루 중 아무렇게나 남긴 짧은 기록을 분류하는 역할이야.
@@ -29,7 +33,7 @@ const SYSTEM_PROMPT = `너는 사용자가 하루 중 아무렇게나 남긴 짧
 8. 출력은 지정한 JSON 스키마만 채워. 설명 문장 금지.`;
 
 interface ClassifyResult {
-  category: (typeof CATEGORY_LIST)[number] | null;
+  category: Category | null;
   subtags: string[];
   people: string[];
   confidence: number;

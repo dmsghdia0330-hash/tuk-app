@@ -1,7 +1,7 @@
--- '건강' 카테고리 추가 (생리·병원·운동·아픔 등 몸/건강 관련).
--- entries.category의 기존 CHECK 제약(다섯 카테고리만 허용)을 찾아 지우고,
--- 여섯 카테고리를 허용하는 제약으로 다시 만든다. (제약 이름이 환경마다 다를 수
--- 있어 category를 참조하는 CHECK 제약을 이름과 무관하게 찾아 제거한다.)
+-- 카테고리는 앞으로 코드(constants의 CATEGORIES)에서만 관리한다. DB가 값을
+-- 고정 목록으로 제한하면 카테고리를 하나 늘릴 때마다 마이그레이션이 필요해
+-- 번거롭다. 앱이 항상 유효한 값만 기록하므로, category 컬럼의 CHECK 제약을
+-- 완전히 제거해 자유 텍스트로 둔다. (이후 카테고리 추가는 코드 배포만으로 끝.)
 do $$
 declare c text;
 begin
@@ -14,7 +14,3 @@ begin
     execute format('alter table public.entries drop constraint %I', c);
   end if;
 end $$;
-
-alter table public.entries
-  add constraint entries_category_check
-  check (category in ('식단', '감정', '할일', '소비', '관계', '건강'));
