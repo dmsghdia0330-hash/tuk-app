@@ -296,7 +296,7 @@ export default function TreeScreen() {
                             </g>
                           );
                         })}
-                        <text x={Math.max(26, Math.min(274, bx))} y={Math.max(20, by - (17 + strength * 16))} fill={meta.color} fontSize="11" textAnchor="middle" fontWeight="700" style={{ fontFamily: "'Pretendard',sans-serif" }}>{cat}</text>
+                        {/* 라벨은 나무에 넣지 않는다(잎과 겹쳐 지저분해짐). 아래 가지 칩이 이름·색을 담당. */}
                       </>
                     )}
                   </g>
@@ -367,31 +367,39 @@ export default function TreeScreen() {
           </div>
           <div style={{ fontSize: 13, color: T.sub, marginBottom: 18 }}>{monthLabelOf(viewMonth)}에 {branchDetail.count}번 · 이 가지만 자세히</div>
 
-          {/* --- 소비 가지: 소비 감정 요약 + 충동소비 스트릭 --- */}
-          {treeBranch === "소비" && spendSummary.total > 0 && (
+          {/* --- 소비 가지: 무엇에 썼나(버블) + (감정 데이터 있으면) 요약·스트릭 --- */}
+          {treeBranch === "소비" && (
             <>
-              <div style={{ background: T.card, borderRadius: 14, padding: "15px 16px", marginBottom: 14 }}>
-                <div style={{ fontSize: 12, color: T.sub, marginBottom: 12, fontWeight: 700 }}>이번 달 소비, 어떤 마음이었나</div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {Object.entries(SPEND_EMOTION).map(([emo, meta]) => (
-                    <span key={emo} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, background: T.cardAlt, borderRadius: 999, padding: "7px 13px", opacity: spendSummary.counts[emo] ? 1 : 0.45 }}>
-                      <span style={{ width: 10, height: 10, borderRadius: "50%", background: meta.color }} />
-                      <span style={{ color: T.text }}>{emo}</span>
-                      <span style={{ color: T.dim, fontWeight: 700 }}>{spendSummary.counts[emo] || 0}</span>
-                    </span>
-                  ))}
-                </div>
+              <div style={{ background: T.card, borderRadius: 18, padding: "16px 14px 10px", marginBottom: 14 }}>
+                <div style={{ fontSize: 12, color: T.sub, fontWeight: 700 }}>이번 달, 무엇에 돈을 썼나</div>
+                <BubbleCloud items={Object.entries(branchDetail.subCounts).map(([label, count]) => ({ label, count }))} color={CATEGORIES.소비.color} T={T} />
               </div>
-              <div style={{ background: T.card, borderRadius: 14, padding: "16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ position: "relative", width: 52, height: 52, flexShrink: 0 }}>
-                  <div style={{ position: "absolute", inset: 0, borderRadius: 12, background: T.line, overflow: "hidden" }}><div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: `${Math.min(impulseFree / 8, 1) * 100}%`, background: "linear-gradient(180deg,#F0997B,#C05A2E)" }} /></div>
-                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><PiggyBank size={26} color="#FCEAE2" /></div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700 }}>충동소비 없이 {impulseFree}번째</div>
-                  <div style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>천천히 차오르는 중이에요. 끊겨도 괜찮아요.</div>
-                </div>
-              </div>
+              {spendSummary.total > 0 && (
+                <>
+                  <div style={{ background: T.card, borderRadius: 14, padding: "15px 16px", marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, color: T.sub, marginBottom: 12, fontWeight: 700 }}>어떤 마음이었나</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {Object.entries(SPEND_EMOTION).map(([emo, meta]) => (
+                        <span key={emo} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, background: T.cardAlt, borderRadius: 999, padding: "7px 13px", opacity: spendSummary.counts[emo] ? 1 : 0.45 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: "50%", background: meta.color }} />
+                          <span style={{ color: T.text }}>{emo}</span>
+                          <span style={{ color: T.dim, fontWeight: 700 }}>{spendSummary.counts[emo] || 0}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ background: T.card, borderRadius: 14, padding: "16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ position: "relative", width: 52, height: 52, flexShrink: 0 }}>
+                      <div style={{ position: "absolute", inset: 0, borderRadius: 12, background: T.line, overflow: "hidden" }}><div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: `${Math.min(impulseFree / 8, 1) * 100}%`, background: "linear-gradient(180deg,#F0997B,#C05A2E)" }} /></div>
+                      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><PiggyBank size={26} color="#FCEAE2" /></div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700 }}>충동소비 없이 {impulseFree}번째</div>
+                      <div style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>천천히 차오르는 중이에요. 끊겨도 괜찮아요.</div>
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
 
@@ -487,28 +495,26 @@ export default function TreeScreen() {
             );
           })()}
 
-          {/* --- 할일 가지: 코르크 메모보드 (포스트잇) --- */}
+          {/* --- 할일 가지: 던져둔 것들 (담백한 목록) --- */}
           {treeBranch === "할일" && (
-            <div style={{ background: theme !== "light" ? "linear-gradient(135deg,#2A2015,#231A12)" : "linear-gradient(135deg,#E8D9BE,#DFCEAD)", borderRadius: 18, padding: "18px 16px", marginBottom: 14, border: `1px solid ${T.line}` }}>
-              <div style={{ fontSize: 12, color: theme !== "light" ? "#C9A876" : "#8A6A3E", marginBottom: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
-                <Pin size={13} style={{ display: "inline", verticalAlign: "-2px" }} /> 던져둔 것들 · {branchDetail.count}개
+            <div style={{ background: T.card, borderRadius: 18, padding: "18px 16px", marginBottom: 14 }}>
+              <div style={{ fontSize: 12, color: T.sub, marginBottom: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                <Pin size={13} color={CATEGORIES.할일.color} /> 던져둔 것들 · {branchDetail.count}개
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                {branchDetail.items.length === 0 ? (
-                  <div style={{ fontSize: 13, color: T.dim }}>아직 던져둔 할 일이 없어요.</div>
-                ) : branchDetail.items.map((e, i) => {
-                  const notes = ["#FFE4A3", "#FFD1DC", "#C9E4CA", "#BFD7EA"];
-                  const rot = [-3, 2, -1.5, 3, -2][i % 5];
-                  return (
-                    <div key={e.id} style={{ background: notes[i % 4], color: "#3A3020", borderRadius: 3, padding: "12px 12px", width: "calc(50% - 5px)", minHeight: 62, transform: `rotate(${rot}deg)`, boxShadow: "0 3px 6px rgba(0,0,0,0.2)", position: "relative", fontSize: 13, lineHeight: 1.4 }}>
-                      <div style={{ position: "absolute", top: -6, left: "50%", transform: "translateX(-50%)", width: 10, height: 10, borderRadius: "50%", background: "#C0492E", boxShadow: "0 1px 2px rgba(0,0,0,0.3)" }} />
-                      {e.text.length > 28 ? e.text.slice(0, 28) + "…" : e.text}
+              {branchDetail.items.length === 0 ? (
+                <div style={{ fontSize: 13, color: T.dim }}>아직 던져둔 할 일이 없어요.</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {branchDetail.items.map((e) => (
+                    <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 11, background: T.cardAlt, borderRadius: 12, padding: "12px 14px" }}>
+                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: CATEGORIES.할일.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: 13.5, color: T.text, lineHeight: 1.4 }}>{e.text}</span>
                     </div>
-                  );
-                })}
-              </div>
-              <div style={{ fontSize: 12, color: theme !== "light" ? "#A89070" : "#8A6A3E", marginTop: 16, lineHeight: 1.6, fontStyle: "italic" }}>
-                완료 체크 같은 건 없어요. 급하면 알아서 하겠죠. 안 급하면 그냥 붙여둬도 되고요.
+                  ))}
+                </div>
+              )}
+              <div style={{ fontSize: 12, color: T.sub, marginTop: 14, lineHeight: 1.6 }}>
+                완료 체크 같은 건 없어요. 급하면 알아서 하겠죠. 안 급하면 그냥 둬도 되고요.
               </div>
             </div>
           )}
@@ -544,7 +550,7 @@ export default function TreeScreen() {
           )}
 
           {/* --- 공통: 세부 태그 분포 (작게, 칩 형태). 식단은 버블이 이미 보여주므로 생략 --- */}
-          {treeBranch !== "식단" && Object.keys(branchDetail.subCounts).length > 0 && (
+          {treeBranch !== "식단" && treeBranch !== "소비" && Object.keys(branchDetail.subCounts).length > 0 && (
             <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>
               {Object.entries(branchDetail.subCounts).sort((a, b) => b[1] - a[1]).map(([sub, cnt]) => {
                 const c = CATEGORIES[treeBranch].color;
