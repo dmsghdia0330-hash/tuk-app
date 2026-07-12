@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Heart, Moon, PiggyBank, Pin, Search, Share2, Sprout, TreePine, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, PiggyBank, Pin, Search, Share2, Sprout, TreePine, X } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
 import {
   catOfTag,
@@ -13,7 +13,7 @@ import { dayLabelOf, monthKeyOf, monthLabelOf } from "@/lib/tuk/date";
 import { exportTreeImage } from "@/lib/tuk/shareImage";
 import type { CatData, Category } from "@/lib/tuk/types";
 import MiniTree from "./MiniTree";
-import FoodIcon from "./FoodIcon";
+import BubbleCloud from "./BubbleCloud";
 
 const emptyCatData = (): Record<Category, CatData> => {
   const m = {} as Record<Category, CatData>;
@@ -281,13 +281,14 @@ export default function TreeScreen() {
                     <path d={`M150 164 Q${midx} ${midy} ${bx} ${by}`} stroke={T.trunk} strokeWidth={branchW} fill="none" strokeLinecap="round" />
                     {data.total > 0 && (
                       <>
-                        {[[0, 0, 1], [-1, -0.6, 0.7], [1, -0.4, 0.65], [0.3, 0.9, 0.6], [-0.8, 0.5, 0.55]].map(([dx, dy, sc], k) => {
-                          const R = (14 + strength * 18) * sc;
-                          return <circle key={k} cx={bx + dx * (10 + strength * 8)} cy={by + dy * (10 + strength * 8)} r={R} fill={meta.color} opacity={0.13 + k * 0.01} />;
+                        {/* 가지마다 잎을 작고 촘촘하게 — 6가지가 서로 안 뭉개지도록 */}
+                        {[[0, 0, 1], [-0.7, -0.45, 0.62], [0.7, -0.35, 0.58], [0, 0.55, 0.5]].map(([dx, dy, sc], k) => {
+                          const R = (11 + strength * 12) * sc;
+                          return <circle key={k} cx={bx + dx * (8 + strength * 6)} cy={by + dy * (8 + strength * 6)} r={R} fill={meta.color} opacity={0.16 + k * 0.015} />;
                         })}
                         {subs.map(([sub, cnt], i) => {
-                          const a = (i / Math.max(subs.length, 1)) * Math.PI * 2 + rad, rr = 9 + strength * 15;
-                          const fx = bx + Math.cos(a) * rr, fy = by + Math.sin(a) * rr, fruitR = 3 + Math.min(cnt, 8) * 1.5;
+                          const a = (i / Math.max(subs.length, 1)) * Math.PI * 2 + rad, rr = 7 + strength * 11;
+                          const fx = bx + Math.cos(a) * rr, fy = by + Math.sin(a) * rr, fruitR = 2.6 + Math.min(cnt, 8) * 1.3;
                           return (
                             <g key={sub}>
                               <circle cx={fx} cy={fy} r={fruitR} fill={meta.color} stroke={T.fruitStroke} strokeWidth="1" />
@@ -295,7 +296,7 @@ export default function TreeScreen() {
                             </g>
                           );
                         })}
-                        <text x={bx} y={by - (20 + strength * 20)} fill={meta.color} fontSize="11.5" textAnchor="middle" fontWeight="700" style={{ fontFamily: "'Pretendard',sans-serif" }}>{cat}</text>
+                        <text x={Math.max(26, Math.min(274, bx))} y={Math.max(20, by - (17 + strength * 16))} fill={meta.color} fontSize="11" textAnchor="middle" fontWeight="700" style={{ fontFamily: "'Pretendard',sans-serif" }}>{cat}</text>
                       </>
                     )}
                   </g>
@@ -448,45 +449,11 @@ export default function TreeScreen() {
             </div>
           )}
 
-          {/* --- 식단 가지: 무엇을 자주 먹었나 --- */}
+          {/* --- 식단 가지: 이번 달 뭘 먹었나 (버블) --- */}
           {treeBranch === "식단" && (
-            <div style={{ background: T.card, borderRadius: 18, padding: "18px 16px", marginBottom: 14 }}>
-              <div style={{ fontSize: 12, color: T.sub, marginBottom: 16, fontWeight: 700 }}>뭘 자주 먹었나</div>
-              {(() => {
-                const foods = [
-                  { key: "치킨" }, { key: "라면" }, { key: "김치찌개" }, { key: "커피" },
-                  { key: "빵" }, { key: "떡볶이" }, { key: "배달" }, { key: "밥" },
-                  { key: "피자" }, { key: "버거" }, { key: "술" },
-                ];
-                const counts = foods.map((f) => ({ ...f, n: branchDetail.items.filter((e) => e.text.includes(f.key)).length })).filter((f) => f.n > 0).sort((a, b) => b.n - a.n);
-                const mx = Math.max(...counts.map((c) => c.n), 1);
-                const nightN = branchDetail.items.filter((e) => e.tags.includes("야식")).length;
-                if (counts.length === 0) return <div style={{ fontSize: 13, color: T.dim }}>아직 뭘 먹었는지 기록이 적어요.</div>;
-                return (
-                  <>
-                    <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-end", justifyContent: "center", padding: "8px 0 4px" }}>
-                      {counts.map((f) => {
-                        const size = 32 + (f.n / mx) * 28;
-                        return (
-                          <div key={f.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
-                            <div style={{ height: 60, display: "flex", alignItems: "flex-end" }}><FoodIcon type={f.key} size={size} color={CATEGORIES.식단.color} /></div>
-                            <span style={{ fontSize: 12, color: T.text }}>{f.key}</span>
-                            <span style={{ fontSize: 11, color: T.dim }}>{f.n}번</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {nightN > 0 && (
-                      <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.line}`, display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: T.sub }}>
-                        그중 야식이 {nightN}번이었어요 <Moon size={13} color="#9DB4FF" style={{ display: "inline", verticalAlign: "-2px" }} />
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-              <div style={{ fontSize: 12.5, color: T.text, marginTop: 14, lineHeight: 1.6, background: T.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
-                <span style={{ color: "#E8A24C", fontWeight: 700 }}>AI</span> 요즘 혼자 대충 때우는 날이 좀 있었네요. 그런 날도 있죠.
-              </div>
+            <div style={{ background: T.card, borderRadius: 18, padding: "16px 14px 10px", marginBottom: 14 }}>
+              <div style={{ fontSize: 12, color: T.sub, fontWeight: 700 }}>이번 달, 뭘 자주 먹었나</div>
+              <BubbleCloud items={Object.entries(branchDetail.subCounts).map(([label, count]) => ({ label, count }))} color={CATEGORIES.식단.color} T={T} />
             </div>
           )}
 
@@ -562,24 +529,13 @@ export default function TreeScreen() {
                     WORDS.forEach((p) => { if (e.text.includes(p)) people[p] = (people[p] || 0) + 1; });
                   }
                 });
-                const list = Object.entries(people).sort((a, b) => b[1] - a[1]).slice(0, 8);
-                const mx = Math.max(...list.map((l) => l[1]), 1);
-                if (list.length === 0) return <div style={{ fontSize: 13, color: T.dim }}>아직 사람 이야기는 많지 않네요.</div>;
+                const list = Object.entries(people).map(([label, count]) => ({ label, count }));
+                if (list.length === 0) return <div style={{ fontSize: 13, color: T.dim, padding: "10px 0" }}>아직 사람 이야기는 많지 않네요. 이름을 적으면 사람별로 모아드려요.</div>;
                 return (
                   <>
-                    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", justifyContent: "center", padding: "10px 0" }}>
-                      {list.map(([name, n]) => {
-                        const size = 44 + (n / mx) * 40;
-                        return (
-                          <div key={name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                            <div style={{ width: size, height: size, borderRadius: "50%", background: "#FFD76F22", border: `1.5px solid #FFD76F`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#FFD76F" }}>{name}</div>
-                            <span style={{ fontSize: 11, color: T.dim }}>{n}번</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div style={{ fontSize: 12.5, color: T.text, marginTop: 14, lineHeight: 1.6, background: T.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
-                      <span style={{ color: "#FFD76F", fontWeight: 700 }}>AI</span> 이름을 적으면 사람별로 나눠서 모아드려요. &quot;지수랑 카페&quot;, &quot;팀장님 때문에 힘듦&quot; 같은 것도 알아채요.
+                    <BubbleCloud items={list} color={CATEGORIES.관계.color} T={T} />
+                    <div style={{ fontSize: 12.5, color: T.text, marginTop: 6, lineHeight: 1.6, background: T.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
+                      <span style={{ color: CATEGORIES.관계.color, fontWeight: 700 }}>AI</span> 이름을 적으면 사람별로 나눠서 모아드려요. &quot;지수랑 카페&quot;, &quot;팀장님 때문에 힘듦&quot; 같은 것도 알아채요.
                     </div>
                   </>
                 );
@@ -587,8 +543,8 @@ export default function TreeScreen() {
             </div>
           )}
 
-          {/* --- 공통: 세부 태그 분포 (작게, 칩 형태) --- */}
-          {Object.keys(branchDetail.subCounts).length > 0 && (
+          {/* --- 공통: 세부 태그 분포 (작게, 칩 형태). 식단은 버블이 이미 보여주므로 생략 --- */}
+          {treeBranch !== "식단" && Object.keys(branchDetail.subCounts).length > 0 && (
             <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 16 }}>
               {Object.entries(branchDetail.subCounts).sort((a, b) => b[1] - a[1]).map(([sub, cnt]) => {
                 const c = CATEGORIES[treeBranch].color;
