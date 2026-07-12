@@ -7,11 +7,12 @@ import type {
 } from "./types";
 
 export const CATEGORIES: Record<Category, CategoryMeta> = {
-  식단: { color: "#E8A24C", angle: -55 },
-  감정: { color: "#7C9EFF", angle: -20 },
-  할일: { color: "#FF6F91", angle: 15 },
-  소비: { color: "#5FD9B4", angle: 50 },
-  관계: { color: "#FFD76F", angle: 80 },
+  식단: { color: "#E8A24C", angle: -72 },
+  감정: { color: "#7C9EFF", angle: -43 },
+  건강: { color: "#B39DDB", angle: -14 },
+  할일: { color: "#FF6F91", angle: 14 },
+  소비: { color: "#5FD9B4", angle: 43 },
+  관계: { color: "#FFD76F", angle: 72 },
 };
 
 export const SUBTAG_CAT: Record<string, Category> = {
@@ -27,6 +28,10 @@ export const SUBTAG_CAT: Record<string, Category> = {
   충동구매: "소비",
   필요소비: "소비",
   친구: "관계",
+  갈등: "관계",
+  생리: "건강",
+  병원: "건강",
+  운동: "건강",
 };
 
 export const NEGATIVE_TAGS = ["무기력", "스트레스"];

@@ -13,6 +13,10 @@ export function guessTags(text: string): string[] {
   if (/(약속|만나|만남)/.test(t) && tags.length < 2) tags.push("약속");
   if (/(샀|구매|질렀|결제|주문)/.test(t) && tags.length < 2)
     tags.push(/(홧김|충동|또)/.test(t) ? "충동구매" : "소비");
-  if (/(친구|동생|언니|형|엄마|같이)/.test(t) && tags.length < 2) tags.push("친구");
+  if (/(생리|월경)/.test(t) && tags.length < 2) tags.push("생리");
+  else if (/(병원|진료|아파|아픔|몸살|두통|감기|열나)/.test(t) && tags.length < 2) tags.push("병원");
+  else if (/(운동|헬스|러닝|산책|요가)/.test(t) && tags.length < 2) tags.push("운동");
+  if (/(친구|동생|언니|형|엄마|같이|싸웠|다퉜)/.test(t) && tags.length < 2)
+    tags.push(/(싸웠|다퉜|갈등)/.test(t) ? "갈등" : "친구");
   return [...new Set(tags)].slice(0, 2);
 }

@@ -1,4 +1,4 @@
-export type Category = "식단" | "감정" | "할일" | "소비" | "관계";
+export type Category = "식단" | "감정" | "할일" | "소비" | "관계" | "건강";
 export type SpendEmotion = "필요" | "스트레스" | "충동";
 
 export interface Entry {

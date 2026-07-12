@@ -5,18 +5,27 @@ import { checkRateLimit } from "@/lib/tuk/rateLimit";
 
 const client = new Anthropic();
 
-const CATEGORY_LIST = ["식단", "감정", "할일", "소비", "관계"] as const;
+const CATEGORY_LIST = ["식단", "감정", "할일", "소비", "관계", "건강"] as const;
 const MAX_TEXT_LENGTH = 500;
 
 const SYSTEM_PROMPT = `너는 사용자가 하루 중 아무렇게나 남긴 짧은 기록을 분류하는 역할이야.
+
+카테고리 정의(정확히 이 여섯 중 하나에 가장 자연스럽게 맞으면 그것, 아니면 null):
+- 식단: 먹고 마신 것 (밥, 야식, 커피 등)
+- 감정: 기분·마음 상태 (기분좋음, 무기력, 스트레스 등)
+- 할일: 해야 할 일·약속·일정
+- 소비: 돈을 쓴 것 (구매, 결제, 지출)
+- 관계: 사람·관계 (친구, 가족, 만남, 다툼 등)
+- 건강: 몸·건강 상태 (생리, 병원, 운동, 아픔, 감기, 수면 등)
+
 규칙:
-1. 카테고리는 정확히 다음 다섯 중 하나이거나, 애매하면 null: 식단/감정/할일/소비/관계.
-2. 세부 태그는 그 카테고리에 자연스럽게 속하는 것만, 최대 2개. 억지로 채우지 마.
+1. category는 위 정의 중 가장 자연스러운 하나. 여섯 어디에도 자연스럽지 않으면 절대 억지로 넣지 말고 category=null, undecided=true. 오분류가 미분류보다 나쁘다.
+2. category를 정했으면 subtags는 반드시 그 카테고리 정의에 속하는 것만 최대 2개. 다른 카테고리의 태그를 섞지 마. (예: category가 관계인데 "기분좋음"처럼 감정 태그를 붙이지 마 — 그런 경우엔 감정이 핵심이면 category를 감정으로 바꿔.) 억지로 두 개 채우지 말고 핵심만.
 3. 사람(이름/호칭: 엄마, 팀장, 지수 등)이 등장하면 people에 원문 표기 그대로 넣어.
 4. 감정을 단정적으로 진단하지 마. "무기력"처럼 관찰 가능한 상태 태그만 붙여.
-5. 확신이 낮으면(0.6 미만) undecided=true, category=null 로 둬. 억지 분류가 오분류보다 나빠.
+5. 확신이 낮으면(0.6 미만) undecided=true, category=null.
 6. 자해·자살·타해를 암시하는 표현이 조금이라도 있으면 risk=true로 표시해. 이건 category와 별개로 항상 확인해.
-7. category가 "소비"면 spendEmotion도 채워: 필요한 지출로 읽히면 "필요", 스트레스성 지출이면 "스트레스", 충동적인 지출이면 "충동". 소비가 아니면 spendEmotion은 null.
+7. category가 "소비"면 spendEmotion도 채워: 필요한 지출이면 "필요", 스트레스성이면 "스트레스", 충동적이면 "충동". 소비가 아니면 null.
 8. 출력은 지정한 JSON 스키마만 채워. 설명 문장 금지.`;
 
 interface ClassifyResult {

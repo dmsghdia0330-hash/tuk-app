@@ -279,10 +279,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const next = p.map((e) => {
           if (e.id === id && !e.tags.includes(tag) && e.tags.length < 2) {
             sourceText = e.text;
-            // 분류가 확신 없어(undecided) category가 비어있던 기록에 수동으로
-            // 태그를 붙이는 경우, 이 고정 태그 목록에서 카테고리를 함께 채워야
-            // 나무 화면에서 이 기록이 어느 가지에도 안 걸리는 걸 막을 수 있다.
-            const category = e.category ?? SUBTAG_CAT[tag] ?? null;
+            // 사용자가 직접 고른 태그는 강한 신호다. 그 태그의 카테고리가 분명하면
+            // 그걸 우선 적용해, "감정 태그를 달았는데 관계 가지에 남는" 문제를 막는다.
+            // (분명하지 않은 태그면 기존 category를 유지.)
+            const category = SUBTAG_CAT[tag] ?? e.category ?? null;
             return { ...e, tags: [...e.tags, tag], category };
           }
           return e;
