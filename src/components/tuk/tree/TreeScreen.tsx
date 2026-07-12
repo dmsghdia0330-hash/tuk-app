@@ -6,7 +6,6 @@ import { useTuk } from "@/context/AppContext";
 import {
   catOfTag,
   CATEGORIES,
-  EMPTY_DAY,
   NEGATIVE_TAGS,
   SPEND_EMOTION,
 } from "@/lib/tuk/constants";
@@ -136,20 +135,14 @@ export default function TreeScreen() {
   const isCurrentMonth = viewMonth === monthKeyOf(new Date());
   const treeMood = monthEntries.length === 0 ? "empty" : isCurrentMonth && monthEntries.length < 5 ? "growing" : monthEntries.length < 4 ? "quiet" : "full";
 
-  // 이번 달 소비 색달력: 하루 안에 여러 건이면 가장 최근(entries는 최신순) 감정을 쓴다.
-  const spendCalendar = useMemo(() => {
-    const map: Record<number, "필요" | "스트레스" | "충동"> = {};
+  // 이번 달 소비 감정 요약: 필요/스트레스/충동이 각각 몇 번이었나.
+  const spendSummary = useMemo(() => {
+    const counts: Record<string, number> = { 필요: 0, 스트레스: 0, 충동: 0 };
     monthEntries.forEach((e) => {
-      if (e.spendEmotion && map[new Date(e.createdAt).getDate()] === undefined) {
-        map[new Date(e.createdAt).getDate()] = e.spendEmotion;
-      }
+      if (e.spendEmotion) counts[e.spendEmotion] += 1;
     });
-    return map;
+    return { counts, total: counts.필요 + counts.스트레스 + counts.충동 };
   }, [monthEntries]);
-
-  const [calYear, calMonthNum] = viewMonth.split("-").map(Number);
-  const daysInMonth = new Date(calYear, calMonthNum, 0).getDate();
-  const leadingBlanks = new Date(calYear, calMonthNum - 1, 1).getDay();
 
   // 전체 기록(최신순) 중 가장 최근 "충동" 소비 이후 이어진 소비 기록 수
   const impulseFree = useMemo(() => {
@@ -373,24 +366,20 @@ export default function TreeScreen() {
           </div>
           <div style={{ fontSize: 13, color: T.sub, marginBottom: 18 }}>{monthLabelOf(viewMonth)}에 {branchDetail.count}번 · 이 가지만 자세히</div>
 
-          {/* --- 소비 가지: 색달력 + 스트릭 --- */}
-          {treeBranch === "소비" && (
+          {/* --- 소비 가지: 소비 감정 요약 + 충동소비 스트릭 --- */}
+          {treeBranch === "소비" && spendSummary.total > 0 && (
             <>
-              <div style={{ background: T.card, borderRadius: 18, padding: "16px 14px", marginBottom: 14 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6, marginBottom: 6 }}>
-                  {["일", "월", "화", "수", "목", "금", "토"].map((d) => <div key={d} style={{ textAlign: "center", fontSize: 11, color: T.dim }}>{d}</div>)}
+              <div style={{ background: T.card, borderRadius: 14, padding: "15px 16px", marginBottom: 14 }}>
+                <div style={{ fontSize: 12, color: T.sub, marginBottom: 12, fontWeight: 700 }}>이번 달 소비, 어떤 마음이었나</div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {Object.entries(SPEND_EMOTION).map(([emo, meta]) => (
+                    <span key={emo} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, background: T.cardAlt, borderRadius: 999, padding: "7px 13px", opacity: spendSummary.counts[emo] ? 1 : 0.45 }}>
+                      <span style={{ width: 10, height: 10, borderRadius: "50%", background: meta.color }} />
+                      <span style={{ color: T.text }}>{emo}</span>
+                      <span style={{ color: T.dim, fontWeight: 700 }}>{spendSummary.counts[emo] || 0}</span>
+                    </span>
+                  ))}
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6 }}>
-                  {Array.from({ length: leadingBlanks }).map((_, i) => <div key={"b" + i} />)}
-                  {Array.from({ length: daysInMonth }).map((_, i) => {
-                    const day = i + 1, emo = spendCalendar[day], bg = emo ? SPEND_EMOTION[emo].color : EMPTY_DAY, ink = emo ? SPEND_EMOTION[emo].ink : "#5A5560";
-                    return <div key={day} style={{ aspectRatio: "1/1", borderRadius: 8, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10.5, fontWeight: 600, color: ink }}>{day}</div>;
-                  })}
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 14, justifyContent: "center", marginBottom: 14, flexWrap: "wrap" }}>
-                {Object.entries(SPEND_EMOTION).map(([emo, meta]) => <span key={emo} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}><span style={{ width: 12, height: 12, borderRadius: 4, background: meta.color, border: `1px solid #ffffff22` }} /><span style={{ color: T.text }}>{emo}</span></span>)}
-                <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}><span style={{ width: 12, height: 12, borderRadius: 4, background: EMPTY_DAY }} /><span style={{ color: T.dim }}>기록 없음</span></span>
               </div>
               <div style={{ background: T.card, borderRadius: 14, padding: "16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 14 }}>
                 <div style={{ position: "relative", width: 52, height: 52, flexShrink: 0 }}>
@@ -398,12 +387,9 @@ export default function TreeScreen() {
                   <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><PiggyBank size={26} color="#FCEAE2" /></div>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700 }}>충동소비 없는 날 {impulseFree}일째</div>
+                  <div style={{ fontSize: 15, fontWeight: 700 }}>충동소비 없이 {impulseFree}번째</div>
                   <div style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>천천히 차오르는 중이에요. 끊겨도 괜찮아요.</div>
                 </div>
-              </div>
-              <div style={{ fontSize: 12.5, color: T.text, marginBottom: 14, lineHeight: 1.6, background: T.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
-                <span style={{ color: "#C0492E", fontWeight: 700 }}>AI</span> 스트레스 받은 날 지갑이 열리는 편이네요. 알아두면 그걸로 충분해요.
               </div>
             </>
           )}
@@ -468,9 +454,9 @@ export default function TreeScreen() {
               <div style={{ fontSize: 12, color: T.sub, marginBottom: 16, fontWeight: 700 }}>뭘 자주 먹었나</div>
               {(() => {
                 const foods = [
-                  { key: "치킨" }, { key: "라면" }, { key: "김치찌개" },
-                  { key: "커피" }, { key: "빵" }, { key: "떡볶이" },
-                  { key: "배달" }, { key: "밥" },
+                  { key: "치킨" }, { key: "라면" }, { key: "김치찌개" }, { key: "커피" },
+                  { key: "빵" }, { key: "떡볶이" }, { key: "배달" }, { key: "밥" },
+                  { key: "피자" }, { key: "버거" }, { key: "술" },
                 ];
                 const counts = foods.map((f) => ({ ...f, n: branchDetail.items.filter((e) => e.text.includes(f.key)).length })).filter((f) => f.n > 0).sort((a, b) => b.n - a.n);
                 const mx = Math.max(...counts.map((c) => c.n), 1);
@@ -504,6 +490,36 @@ export default function TreeScreen() {
             </div>
           )}
 
+          {/* --- 건강 가지: 이번 달 몸이 보낸 신호 (부드러운 막대) --- */}
+          {treeBranch === "건강" && (() => {
+            const counts: Record<string, number> = {};
+            branchDetail.items.forEach((e) => e.tags.forEach((t) => {
+              if (catOfTag(t, e.category) === "건강") counts[t] = (counts[t] || 0) + 1;
+            }));
+            const list = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+            if (list.length === 0) return null;
+            const mx = Math.max(...list.map((l) => l[1]), 1);
+            return (
+              <div style={{ background: T.card, borderRadius: 18, padding: "18px 16px", marginBottom: 14 }}>
+                <div style={{ fontSize: 12, color: T.sub, marginBottom: 16, fontWeight: 700 }}>이번 달 몸이 보낸 신호</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {list.map(([tag, n]) => (
+                    <div key={tag} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 13, color: T.text, width: 48, flexShrink: 0 }}>{tag}</span>
+                      <div style={{ flex: 1, height: 10, background: T.cardAlt, borderRadius: 999, overflow: "hidden" }}>
+                        <div style={{ width: `${(n / mx) * 100}%`, height: "100%", background: CATEGORIES.건강.color, opacity: 0.85, borderRadius: 999 }} />
+                      </div>
+                      <span style={{ fontSize: 12, color: T.dim, width: 22, textAlign: "right", flexShrink: 0 }}>{n}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: 12.5, color: T.text, marginTop: 16, lineHeight: 1.6, background: T.cardAlt, borderRadius: 10, padding: "10px 12px" }}>
+                  <span style={{ color: CATEGORIES.건강.color, fontWeight: 700 }}>AI</span> 몸이 보내는 신호를 알아차린 것만으로 충분해요.
+                </div>
+              </div>
+            );
+          })()}
+
           {/* --- 할일 가지: 코르크 메모보드 (포스트잇) --- */}
           {treeBranch === "할일" && (
             <div style={{ background: theme !== "light" ? "linear-gradient(135deg,#2A2015,#231A12)" : "linear-gradient(135deg,#E8D9BE,#DFCEAD)", borderRadius: 18, padding: "18px 16px", marginBottom: 14, border: `1px solid ${T.line}` }}>
@@ -536,10 +552,17 @@ export default function TreeScreen() {
               <div style={{ fontSize: 12, color: T.sub, marginBottom: 14, fontWeight: 700 }}>이번 달, 마음에 자주 있던 사람</div>
               {(() => {
                 const people: Record<string, number> = {};
+                // 1순위: AI가 뽑은 실제 등장 인물(이름/호칭). 2순위: 흔한 관계 호칭 텍스트 매칭.
+                const WORDS = ["엄마", "아빠", "언니", "누나", "오빠", "형", "동생", "친구", "가족", "연인", "남편", "아내", "남친", "여친", "팀장", "선배", "후배"];
                 branchDetail.items.forEach((e) => {
-                  ["친구", "동생", "언니", "형", "엄마", "아빠"].forEach((p) => { if (e.text.includes(p)) people[p] = (people[p] || 0) + 1; });
+                  const named = (e.people ?? []).map((p) => p.trim()).filter(Boolean);
+                  if (named.length > 0) {
+                    named.forEach((p) => (people[p] = (people[p] || 0) + 1));
+                  } else {
+                    WORDS.forEach((p) => { if (e.text.includes(p)) people[p] = (people[p] || 0) + 1; });
+                  }
                 });
-                const list = Object.entries(people).sort((a, b) => b[1] - a[1]);
+                const list = Object.entries(people).sort((a, b) => b[1] - a[1]).slice(0, 8);
                 const mx = Math.max(...list.map((l) => l[1]), 1);
                 if (list.length === 0) return <div style={{ fontSize: 13, color: T.dim }}>아직 사람 이야기는 많지 않네요.</div>;
                 return (

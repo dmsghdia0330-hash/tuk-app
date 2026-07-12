@@ -164,6 +164,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       let risk = false;
       let spendEmotion: Entry["spendEmotion"] = null;
       let category: Entry["category"] = null;
+      let people: string[] = [];
       try {
         const res = await fetch("/api/classify", {
           method: "POST",
@@ -173,6 +174,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!res.ok) throw new Error(`classify failed: ${res.status}`);
         const data = await res.json();
         risk = Boolean(data.risk);
+        if (!risk) people = Array.isArray(data.people) ? data.people.slice(0, 5) : [];
         if (!risk && !data.undecided && data.category) {
           tags = Array.isArray(data.subtags) ? data.subtags.slice(0, 4) : [];
           category = data.category;
@@ -192,8 +194,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // 기다린 뒤 최신 유저 기준 repo를 다시 계산해 서버 쪽에 반영되게 한다.
       if (migrationPromiseRef.current) await migrationPromiseRef.current;
       const targetRepo = latestUserRef.current ? remoteEntriesRepo(latestUserRef.current.id) : repo;
-      setEntries((p) => p.map((e) => (e.id === id ? { ...e, tags, risk, spendEmotion, category } : e)));
-      targetRepo.update(id, { tags, risk, spendEmotion, category }).catch((err) => {
+      setEntries((p) => p.map((e) => (e.id === id ? { ...e, tags, risk, spendEmotion, category, people } : e)));
+      targetRepo.update(id, { tags, risk, spendEmotion, category, people }).catch((err) => {
         console.error(err);
       });
 
@@ -213,7 +215,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (text: string, image?: string | null) => {
       const trimmed = text.trim();
       if (!trimmed && !image) return; // 글도 사진도 없으면 던질 게 없다
-      const entry: Entry = { id: crypto.randomUUID(), text: trimmed, tags: [], createdAt: new Date().toISOString(), risk: false, spendEmotion: null, category: null, image: image ?? null };
+      const entry: Entry = { id: crypto.randomUUID(), text: trimmed, tags: [], createdAt: new Date().toISOString(), risk: false, spendEmotion: null, category: null, people: [], image: image ?? null };
       setEntries((p) => [entry, ...p]);
 
       // 즉각 보상: 오늘 나무에 잎 하나 돋기 (분류 전이라 아직 카테고리 색은 모름)

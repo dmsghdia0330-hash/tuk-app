@@ -18,7 +18,7 @@ async function retry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 800): 
   throw lastErr;
 }
 
-type EntryPatch = Partial<Pick<Entry, "tags" | "risk" | "spendEmotion" | "category">>;
+type EntryPatch = Partial<Pick<Entry, "tags" | "risk" | "spendEmotion" | "category" | "people">>;
 
 function readLocal(): Entry[] {
   if (typeof window === "undefined") return [];
@@ -120,12 +120,13 @@ interface EntryRow {
   risk: boolean;
   spend_emotion: Entry["spendEmotion"];
   category: Entry["category"];
+  people: string[] | null;
   has_image: boolean;
 }
 
 function rowToEntry(row: EntryRow): Entry {
   // image는 아래 load()에서 서명 URL로 채운다. 여기선 has_image만 임시 표식으로 둔다.
-  return { id: row.id, text: row.text, tags: row.tags, createdAt: row.created_at, risk: row.risk, spendEmotion: row.spend_emotion, category: row.category, image: null };
+  return { id: row.id, text: row.text, tags: row.tags, createdAt: row.created_at, risk: row.risk, spendEmotion: row.spend_emotion, category: row.category, people: row.people ?? [], image: null };
 }
 
 export function remoteEntriesRepo(userId: string) {
@@ -134,7 +135,7 @@ export function remoteEntriesRepo(userId: string) {
     load: async (): Promise<Entry[]> => {
       const { data, error } = await supabase
         .from("entries")
-        .select("id, text, tags, created_at, risk, spend_emotion, category, has_image")
+        .select("id, text, tags, created_at, risk, spend_emotion, category, people, has_image")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -159,6 +160,7 @@ export function remoteEntriesRepo(userId: string) {
           risk: entry.risk,
           spend_emotion: entry.spendEmotion,
           category: entry.category,
+          people: entry.people,
           // 호출자 규약: entry.image가 있으면 스토리지에 이미 업로드된 상태다
           // (throwEntry/마이그레이션이 업로드 실패 시 image를 null로 만들어 전달).
           has_image: !!entry.image,
@@ -182,6 +184,7 @@ export function remoteEntriesRepo(userId: string) {
         if (patch.risk !== undefined) dbPatch.risk = patch.risk;
         if (patch.spendEmotion !== undefined) dbPatch.spend_emotion = patch.spendEmotion;
         if (patch.category !== undefined) dbPatch.category = patch.category;
+        if (patch.people !== undefined) dbPatch.people = patch.people;
         const { error } = await supabase.from("entries").update(dbPatch).eq("id", id).eq("user_id", userId);
         if (error) throw error;
       };
@@ -233,6 +236,7 @@ export async function migrateLocalEntriesToRemote(userId: string): Promise<void>
     risk: e.risk,
     spend_emotion: e.spendEmotion,
     category: e.category,
+    people: e.people ?? [],
     has_image: uploaded[i],
   }));
   const { error } = await supabase.from("entries").insert(rows);
