@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, Download, Moon, Shield, Sun, Trash2, User } from "lucide-react";
+import { Bell, BookOpen, Download, MessageCircle, Moon, Shield, Sun, Trash2, User } from "lucide-react";
+import { FEEDBACK_EMAIL } from "@/lib/tuk/constants";
 import { useTuk } from "@/context/AppContext";
 
 function calcAge(birthdate: string): number | null {
@@ -164,6 +165,8 @@ export default function SettingsScreen() {
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}><Shield size={17} color="#5FD9B4" /><span style={{ fontWeight: 700, fontSize: 14 }}>당신의 기록을 지키는 약속</span></div>
         <div style={{ color: T.text }}>· 당신이 던진 내용을 광고에 팔지 않아요.<br />· 민감한 기록은 기기에 먼저 저장돼요.<br />· 누구에게도 당신의 기록을 넘기지 않아요.</div>
       </div>
+      <Link href="/onboarding" style={{ background: T.card, borderRadius: 14, padding: "15px 16px", display: "flex", alignItems: "center", gap: 12, color: T.text, width: "100%" }}><BookOpen size={18} color="#5FD9B4" style={{ flexShrink: 0 }} /><div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 500 }}>사용법 다시 보기</div><div style={{ fontSize: 11.5, color: T.sub }}>툭이 어떻게 돌아가는지 3분 안내</div></div></Link>
+      <a href={`mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent("[툭] 건의사항")}`} style={{ background: T.card, borderRadius: 14, padding: "15px 16px", display: "flex", alignItems: "center", gap: 12, color: T.text, width: "100%" }}><MessageCircle size={18} color="#FFD76F" style={{ flexShrink: 0 }} /><div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 500 }}>운영진에게 건의하기</div><div style={{ fontSize: 11.5, color: T.sub }}>불편한 점, 바라는 점 뭐든 툭</div></div></a>
       <button onClick={handleExport} style={{ background: T.card, border: "none", borderRadius: 14, padding: "15px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", color: T.text, textAlign: "left", width: "100%" }}><Download size={18} color="#7C9EFF" style={{ flexShrink: 0 }} /><div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 500 }}>내 기록 전부 내보내기</div><div style={{ fontSize: 11.5, color: T.sub }}>언제든 갖고 나갈 수 있어요</div></div></button>
       {!confirmingDelete ? (
         <button onClick={() => setConfirmingDelete(true)} style={{ background: T.card, border: "none", borderRadius: 14, padding: "15px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", color: "#FF6F91", textAlign: "left", width: "100%" }}><Trash2 size={18} color="#FF6F91" style={{ flexShrink: 0 }} /><div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 500, color: T.text }}>모든 기록 완전히 지우기</div><div style={{ fontSize: 11.5, color: T.sub }}>지우면 서버에서도 사라져요</div></div></button>
