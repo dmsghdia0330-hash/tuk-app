@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>툭</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #101010; color: #8f8f8f;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+      .wrap { height: 100%; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 14px; text-align: center; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: #5FD9B4;
+        animation: pulse 1.2s ease-in-out infinite; }
+      @keyframes pulse { 0%,100% { opacity: .3 } 50% { opacity: 1 } }
+    </style>
+  </head>
+  <body>
+    <!-- 원격 서버 로딩 중/오프라인 시에만 잠깐 보이는 폴백 화면 -->
+    <div class="wrap">
+      <div class="dot"></div>
+      <div>연결하는 중이에요…</div>
+    </div>
+  </body>
+</html>

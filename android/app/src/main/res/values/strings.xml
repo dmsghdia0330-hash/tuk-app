@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">툭</string>
+    <string name="title_activity_main">툭</string>
+    <string name="package_name">cloud.tukapp.app</string>
+    <string name="custom_url_scheme">cloud.tukapp.app</string>
+</resources>

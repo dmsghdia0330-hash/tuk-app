@@ -14,6 +14,10 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Reference mockup, not part of the app build.
     "tuk-app-forest.jsx",
+    // Capacitor native projects — not part of the web build.
+    "android/**",
+    "ios/**",
+    "native/**",
   ]),
 ]);
 
