@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Camera, Heart, Mic, Send, Sprout, TreeDeciduous, X } from "lucide-react";
+import { Bell, Camera, Heart, Send, Sprout, TreeDeciduous, X } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
 import { ALL_SUBTAGS, catOfTag, CATEGORIES, SUBTAG_CAT } from "@/lib/tuk/constants";
 import { dayGroupLabelOf, dayKeyOf, reminderLabelOf, timeLabelOf } from "@/lib/tuk/date";
@@ -120,7 +120,7 @@ export default function HomeScreen() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
             <div style={{ display: "flex", gap: 14 }}>
               <button onClick={() => fileInputRef.current?.click()} aria-label="사진 첨부" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}><Camera size={18} color={pendingImage ? "#5FD9B4" : "#8F8F8F"} /></button>
-              <button onClick={() => showToast("음성으로 던지기는 준비 중이에요")} aria-label="음성으로 던지기 (준비 중)" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}><Mic size={18} color="#8F8F8F" /></button>
+              {/* 음성으로 던지기는 기능이 생기면 그때 버튼을 되살린다 (스토어 심사: 가짜 버튼 금지) */}
             </div>
             <button onClick={handleThrow} style={{ display: "flex", alignItems: "center", gap: 6, background: T.text, color: T.bg, border: "none", borderRadius: 999, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}><Send size={14} /> 던지기</button>
           </div>
