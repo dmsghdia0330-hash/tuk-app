@@ -26,9 +26,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div style={outerStyle(T)}>
-      <div style={{ width: "100%", maxWidth: 420, position: "relative", paddingBottom: 90 }}>
+      <div style={{ width: "100%", maxWidth: 420, position: "relative", paddingBottom: "calc(90px + env(safe-area-inset-bottom))" }}>
         <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 320, pointerEvents: "none", background: `radial-gradient(ellipse 78% 100% at 50% 0%, ${glow}, transparent 70%)` }} />
-        <div style={{ position: "relative", padding: "26px 20px 10px" }}>
+        <div style={{ position: "relative", padding: "calc(26px + env(safe-area-inset-top)) 20px 10px" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
             <span className="serif" style={{ fontSize: 31, fontWeight: 700 }}>툭</span>
             <span className="serif" style={{ fontSize: 13, color: T.dim, letterSpacing: 0 }}>가볍게, 툭</span>
@@ -36,12 +36,12 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <div style={{ fontSize: 13, color: T.sub, marginTop: 4 }}>{subtitle}</div>
         </div>
 
-        {toast && <div style={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", background: T.text, color: T.bg, padding: "8px 16px", borderRadius: 999, fontSize: 13, fontWeight: 700, zIndex: 50 }}>{toast}</div>}
-        {learnNote && <div style={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", background: T.line, color: T.text, padding: "8px 16px", borderRadius: 999, fontSize: 12.5, zIndex: 51, border: `1px solid #4D4668`, maxWidth: "90%", textAlign: "center" }}>{learnNote}</div>}
+        {toast && <div style={{ position: "fixed", top: "calc(16px + env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", background: T.text, color: T.bg, padding: "8px 16px", borderRadius: 999, fontSize: 13, fontWeight: 700, zIndex: 50 }}>{toast}</div>}
+        {learnNote && <div style={{ position: "fixed", top: "calc(16px + env(safe-area-inset-top))", left: "50%", transform: "translateX(-50%)", background: T.line, color: T.text, padding: "8px 16px", borderRadius: 999, fontSize: 12.5, zIndex: 51, border: `1px solid #4D4668`, maxWidth: "90%", textAlign: "center" }}>{learnNote}</div>}
 
         {children}
 
-        <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 420, background: T.cardAlt, borderTop: `1px solid ${T.line}`, display: "flex", justifyContent: "space-around", padding: "10px 0 18px", zIndex: 40 }}>
+        <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 420, background: T.cardAlt, borderTop: `1px solid ${T.line}`, display: "flex", justifyContent: "space-around", padding: "10px 0 calc(18px + env(safe-area-inset-bottom))", zIndex: 40 }}>
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (

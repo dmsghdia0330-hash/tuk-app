@@ -24,7 +24,7 @@ export default function OnboardingScreen() {
   return (
     <div style={outerStyle(T)}>
       <div style={{ width: "100%", maxWidth: 420, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", gap: 6, padding: "60px 32px 0" }}>
+        <div style={{ display: "flex", gap: 6, padding: "calc(60px + env(safe-area-inset-top)) 32px 0" }}>
           {ONBOARD.map((_, i) => (
             <div key={i} style={{ height: 3, flex: 1, borderRadius: 2, background: i <= obStep ? T.text : T.line, transition: "background .3s" }} />
           ))}
@@ -34,7 +34,7 @@ export default function OnboardingScreen() {
           <div className="serif" style={{ fontSize: 44, fontWeight: 800, lineHeight: 1.2, whiteSpace: "pre-line", marginBottom: 20 }}>{s.big}</div>
           <div style={{ fontSize: 15, color: T.text, lineHeight: 1.75, whiteSpace: "pre-line" }}>{s.small}</div>
         </div>
-        <div style={{ padding: "0 32px 42px" }}>
+        <div style={{ padding: "0 32px calc(42px + env(safe-area-inset-bottom))" }}>
           {!last ? (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <button onClick={() => setObStep(ONBOARD.length - 1)} style={{ background: "none", border: "none", color: T.dim, fontSize: 13.5, cursor: "pointer" }}>건너뛰기</button>
