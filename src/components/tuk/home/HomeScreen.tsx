@@ -2,21 +2,23 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Heart, Mic, Send, Sprout, TreeDeciduous, X } from "lucide-react";
+import { Bell, Camera, Heart, Mic, Send, Sprout, TreeDeciduous, X } from "lucide-react";
 import { useTuk } from "@/context/AppContext";
 import { ALL_SUBTAGS, catOfTag, CATEGORIES, SUBTAG_CAT } from "@/lib/tuk/constants";
-import { dayGroupLabelOf, dayKeyOf, timeLabelOf } from "@/lib/tuk/date";
+import { dayGroupLabelOf, dayKeyOf, reminderLabelOf, timeLabelOf } from "@/lib/tuk/date";
 import { compressImage } from "@/lib/tuk/imageUpload";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { entries, T, theme, signedIn, welcomeBack, todayLeaves, leafPop, aiReaction, throwEntry, removeTag, addTag, deleteEntry, showToast } = useTuk();
+  const { entries, T, theme, signedIn, welcomeBack, todayLeaves, leafPop, aiReaction, throwEntry, removeTag, addTag, deleteEntry, clearReminder, showToast } = useTuk();
   const [text, setText] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const [pendingImage, setPendingImage] = useState<string | null>(null); // 던지기 전 붙여둔 사진 미리보기(data-URL)
+  // 알림이 미래인지 판정할 기준 시각. 렌더 중 Date.now() 직접 호출은 금지라 마운트 시 한 번만 잡는다.
+  const [nowMs] = useState(() => Date.now());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -207,9 +209,17 @@ export default function HomeScreen() {
                 </div>
                 <span style={{ fontSize: 11, color: T.dim }}>{timeLabelOf(e.createdAt)}</span>
               </div>
+              {e.remindAt && new Date(e.remindAt).getTime() > nowMs && (
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 8, fontSize: 11.5, color: "#5FD9B4" }}>
+                  <Bell size={12} strokeWidth={2} /> {reminderLabelOf(e.remindAt)} 알림
+                </div>
+              )}
               {expanded && !editing && (
                 <div style={{ display: "flex", gap: 8, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.line}`, animation: "fadeUp .2s ease" }}>
                   <button onClick={() => setEditingId(e.id)} style={{ flex: 1, background: T.line, color: T.text, border: "none", borderRadius: 10, padding: "9px", fontSize: 12.5, cursor: "pointer" }}>태그 고치기</button>
+                  {e.remindAt && new Date(e.remindAt).getTime() > nowMs && (
+                    <button onClick={() => clearReminder(e.id)} style={{ flex: 1, background: "transparent", color: "#5FD9B4", border: `1px solid #5FD9B444`, borderRadius: 10, padding: "9px", fontSize: 12.5, cursor: "pointer" }}>알림 끄기</button>
+                  )}
                   <button onClick={() => deleteEntry(e.id)} style={{ flex: 1, background: "transparent", color: "#FF6F91", border: `1px solid #FF6F9144`, borderRadius: 10, padding: "9px", fontSize: 12.5, cursor: "pointer" }}>지우기</button>
                 </div>
               )}

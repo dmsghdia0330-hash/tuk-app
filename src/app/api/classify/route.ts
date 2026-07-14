@@ -30,7 +30,8 @@ const SYSTEM_PROMPT = `너는 사용자가 하루 중 아무렇게나 남긴 짧
 5. 확신이 낮으면(0.6 미만) undecided=true, category=null.
 6. 자해·자살·타해를 암시하는 표현이 조금이라도 있으면 risk=true로 표시해. 이건 category와 별개로 항상 확인해.
 7. category가 "소비"면 spendEmotion도 채워: 필요한 지출이면 "필요", 스트레스성이면 "스트레스", 충동적이면 "충동". 소비가 아니면 null.
-8. 출력은 지정한 JSON 스키마만 채워. 설명 문장 금지.`;
+8. remindAt: 기록에 '앞으로 챙겨야 할 시점'을 가리키는 시간 표현이 분명히 있으면(예: "내일 3시 병원", "이따 저녁에 약", "금요일 오전 회의") 그 시각을 remindAt에 채운다. 주어지는 '현재 시각'을 기준으로 상대 표현을 절대 시각으로 풀고, 반드시 미래 시각이어야 한다. 형식은 로컬 시간 ISO "YYYY-MM-DDTHH:MM"(시간대 표기 없이). 시(hour)만 있고 분이 없으면 00분. "오후 3시"처럼 오전/오후가 명확하면 24시간제로. 시간 표현이 없거나 애매하면 null. 과거 회상("어제 병원 갔다")은 null.
+9. 출력은 지정한 JSON 스키마만 채워. 설명 문장 금지.`;
 
 interface ClassifyResult {
   category: Category | null;
@@ -40,6 +41,19 @@ interface ClassifyResult {
   undecided: boolean;
   risk: boolean;
   spendEmotion: "필요" | "스트레스" | "충동" | null;
+  remindAt: string | null;
+}
+
+// AI가 준 remindAt이 로컬 ISO 형식("YYYY-MM-DDTHH:MM")이고 실제 날짜로 파싱되면
+// 분까지만 남겨 반환, 아니면 null. 미래인지 최종 판정은 클라이언트(로컬 시각 앎)가 한다.
+function normalizeRemindAt(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const m = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!m) return null;
+  const [, y, mo, d, h, mi] = m;
+  const dt = new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi));
+  if (isNaN(dt.getTime())) return null;
+  return `${y}-${mo}-${d}T${h}:${mi}`;
 }
 
 function getClientIp(request: Request): string {
@@ -50,8 +64,9 @@ function getClientIp(request: Request): string {
 
 export async function POST(request: Request) {
   let text: unknown;
+  let now: unknown;
   try {
-    ({ text } = await request.json());
+    ({ text, now } = await request.json());
   } catch {
     return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   }
@@ -61,6 +76,9 @@ export async function POST(request: Request) {
   if (text.length > MAX_TEXT_LENGTH) {
     return NextResponse.json({ error: "text is too long" }, { status: 400 });
   }
+  // 클라이언트의 로컬 현재 시각 문맥(예: "2026-07-14 22:35 (월요일)")으로 상대
+  // 시간 표현을 절대 시각으로 풀게 한다. 없거나 이상하면 서버 UTC로 대체.
+  const nowContext = typeof now === "string" && now.length <= 40 ? now : new Date().toISOString();
 
   const supabase = await createClient();
   const {
@@ -99,7 +117,7 @@ export async function POST(request: Request) {
       model: "claude-haiku-4-5",
       max_tokens: 500,
       system: SYSTEM_PROMPT + personalizationBlock,
-      messages: [{ role: "user", content: text.trim() }],
+      messages: [{ role: "user", content: `[현재 시각: ${nowContext}]\n\n${text.trim()}` }],
       output_config: {
         format: {
           type: "json_schema",
@@ -117,8 +135,11 @@ export async function POST(request: Request) {
               spendEmotion: {
                 anyOf: [{ type: "string", enum: ["필요", "스트레스", "충동"] }, { type: "null" }],
               },
+              remindAt: {
+                anyOf: [{ type: "string" }, { type: "null" }],
+              },
             },
-            required: ["category", "subtags", "people", "confidence", "undecided", "risk", "spendEmotion"],
+            required: ["category", "subtags", "people", "confidence", "undecided", "risk", "spendEmotion", "remindAt"],
             additionalProperties: false,
           },
         },
@@ -139,6 +160,7 @@ export async function POST(request: Request) {
       undecided: Boolean(parsed.undecided),
       risk: Boolean(parsed.risk),
       spendEmotion: parsed.spendEmotion ?? null,
+      remindAt: normalizeRemindAt(parsed.remindAt),
     };
 
     return NextResponse.json(result);

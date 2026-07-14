@@ -17,6 +17,8 @@ import { guessTags } from "@/lib/tuk/classify";
 import { flushPendingWrites, localEntriesRepo, migrateLocalEntriesToRemote, remoteEntriesRepo } from "@/lib/tuk/entriesRepo";
 import { clearPersonalization, recordCorrection } from "@/lib/tuk/personalization";
 import { dataUrlToBlob, uploadEntryImage } from "@/lib/tuk/imageUpload";
+import { cancelReminder, rescheduleAll, scheduleReminder } from "@/lib/tuk/notify";
+import { nowContextString, reminderLabelOf } from "@/lib/tuk/date";
 import type { Entry, ThemeName, ThemePalette } from "@/lib/tuk/types";
 
 interface TodayLeaf {
@@ -32,6 +34,7 @@ interface AppContextValue {
   removeTag: (id: string, tag: string) => void;
   addTag: (id: string, tag: string) => void;
   deleteEntry: (id: string) => void;
+  clearReminder: (id: string) => void;
   deleteAllEntries: () => Promise<void>;
 
   theme: ThemeName;
@@ -111,7 +114,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const loadFor = async (nextUser: User | null) => {
       try {
         const loaded = nextUser ? await remoteEntriesRepo(nextUser.id).load() : await localEntriesRepo.load();
-        if (!cancelled) setEntries(loaded);
+        if (!cancelled) {
+          setEntries(loaded);
+          // 네이티브에서만: 아직 안 지난 예약 알림을 다시 걸어둔다(다른 기기/웹에서
+          // 던져 이 기기엔 예약이 없던 것도 살아난다). 웹에선 no-op.
+          rescheduleAll(loaded).catch((err) => console.error(err));
+        }
       } catch (err) {
         console.error(err);
         if (!cancelled) showToast("기록을 불러오지 못했어요");
@@ -165,21 +173,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
       let spendEmotion: Entry["spendEmotion"] = null;
       let category: Entry["category"] = null;
       let people: string[] = [];
+      let remindAt: Entry["remindAt"] = null;
       try {
         const res = await fetch("/api/classify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text, now: nowContextString() }),
         });
         if (!res.ok) throw new Error(`classify failed: ${res.status}`);
         const data = await res.json();
         risk = Boolean(data.risk);
-        if (!risk) people = Array.isArray(data.people) ? data.people.slice(0, 5) : [];
-        if (!risk && !data.undecided && data.category) {
-          tags = Array.isArray(data.subtags) ? data.subtags.slice(0, 4) : [];
-          category = data.category;
-          if (data.category === "소비") {
-            spendEmotion = data.spendEmotion ?? null;
+        if (!risk) {
+          people = Array.isArray(data.people) ? data.people.slice(0, 5) : [];
+          // 서버가 준 로컬 ISO를 로컬 시각으로 파싱해 실제 미래일 때만 채택한다.
+          if (typeof data.remindAt === "string" && new Date(data.remindAt).getTime() > Date.now()) {
+            remindAt = data.remindAt;
+          }
+          if (!data.undecided && data.category) {
+            tags = Array.isArray(data.subtags) ? data.subtags.slice(0, 4) : [];
+            category = data.category;
+            if (data.category === "소비") {
+              spendEmotion = data.spendEmotion ?? null;
+            }
           }
         }
       } catch (err) {
@@ -194,12 +209,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // 기다린 뒤 최신 유저 기준 repo를 다시 계산해 서버 쪽에 반영되게 한다.
       if (migrationPromiseRef.current) await migrationPromiseRef.current;
       const targetRepo = latestUserRef.current ? remoteEntriesRepo(latestUserRef.current.id) : repo;
-      setEntries((p) => p.map((e) => (e.id === id ? { ...e, tags, risk, spendEmotion, category, people } : e)));
-      targetRepo.update(id, { tags, risk, spendEmotion, category, people }).catch((err) => {
+      setEntries((p) => p.map((e) => (e.id === id ? { ...e, tags, risk, spendEmotion, category, people, remindAt } : e)));
+      targetRepo.update(id, { tags, risk, spendEmotion, category, people, remindAt }).catch((err) => {
         console.error(err);
       });
 
       if (risk) return; // 위험 신호가 있으면 가벼운 반응을 붙이지 않는다
+
+      // 시간 표현이 잡혔으면 네이티브에서 로컬 알림을 걸고 결과를 살짝 알려준다.
+      if (remindAt) {
+        const res = await scheduleReminder({ id, text, remindAt });
+        const label = reminderLabelOf(remindAt);
+        if (res.ok) showToast(`${label}에 알림을 맞췄어요`);
+        else if (res.reason === "web") showToast(`${label}에 알림 예정 · 폰 앱에서 울려요`);
+        else if (res.reason === "denied") showToast("알림 권한이 꺼져 있어요");
+      }
 
       const reactableTag = tags.find((t) => AI_REACTIONS[t]);
       if (reactableTag && Math.random() < 0.5) {
@@ -208,14 +232,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setTimeout(() => setAiReaction(null), 3200);
       }
     },
-    [repo]
+    [repo, showToast]
   );
 
   const throwEntry = useCallback(
     (text: string, image?: string | null) => {
       const trimmed = text.trim();
       if (!trimmed && !image) return; // 글도 사진도 없으면 던질 게 없다
-      const entry: Entry = { id: crypto.randomUUID(), text: trimmed, tags: [], createdAt: new Date().toISOString(), risk: false, spendEmotion: null, category: null, people: [], image: image ?? null };
+      const entry: Entry = { id: crypto.randomUUID(), text: trimmed, tags: [], createdAt: new Date().toISOString(), risk: false, spendEmotion: null, category: null, people: [], image: image ?? null, remindAt: null };
       setEntries((p) => [entry, ...p]);
 
       // 즉각 보상: 오늘 나무에 잎 하나 돋기 (분류 전이라 아직 카테고리 색은 모름)
@@ -314,7 +338,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.error(err);
         showToast("삭제하지 못했어요");
       });
+      cancelReminder(id).catch((err) => console.error(err)); // 예약된 알림도 함께 취소
       showToast("지웠어요. 원래 그런 거예요.");
+    },
+    [repo, showToast]
+  );
+
+  // 기록은 두고 예약된 알림만 끈다.
+  const clearReminder = useCallback(
+    (id: string) => {
+      setEntries((p) => p.map((e) => (e.id === id ? { ...e, remindAt: null } : e)));
+      repo.update(id, { remindAt: null }).catch((err) => {
+        console.error(err);
+        showToast("알림을 끄지 못했어요");
+      });
+      cancelReminder(id).catch((err) => console.error(err));
+      showToast("알림을 껐어요");
     },
     [repo, showToast]
   );
@@ -382,6 +421,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       removeTag,
       addTag,
       deleteEntry,
+      clearReminder,
       deleteAllEntries,
       theme,
       setTheme,
@@ -399,7 +439,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       leafPop,
       aiReaction,
     }),
-    [entries, throwEntry, removeTag, addTag, deleteEntry, deleteAllEntries, theme, T, user, signInWithEmail, verifyEmailOtp, signOut, toast, showToast, learnNote, welcomeBack, todayLeaves, leafPop, aiReaction]
+    [entries, throwEntry, removeTag, addTag, deleteEntry, clearReminder, deleteAllEntries, theme, T, user, signInWithEmail, verifyEmailOtp, signOut, toast, showToast, learnNote, welcomeBack, todayLeaves, leafPop, aiReaction]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

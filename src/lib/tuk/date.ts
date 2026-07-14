@@ -49,3 +49,24 @@ export function dayKeyOf(value: string | Date): string {
   const d = typeof value === "string" ? new Date(value) : value;
   return dateKeyOf(d);
 }
+
+// 알림 예약 시각 표시: 오늘/내일이면 그 말 + 시각, 아니면 M/D (요일) + 시각.
+export function reminderLabelOf(value: string | Date, now: Date = new Date()): string {
+  const d = typeof value === "string" ? new Date(value) : value;
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const h = d.getHours();
+  const ampm = h < 12 ? "오전" : "오후";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  const time = `${ampm} ${h12}:${String(d.getMinutes()).padStart(2, "0")}`;
+  if (dateKeyOf(d) === dateKeyOf(now)) return `오늘 ${time}`;
+  if (dateKeyOf(d) === dateKeyOf(tomorrow)) return `내일 ${time}`;
+  return `${d.getMonth() + 1}/${d.getDate()} (${WEEKDAYS[d.getDay()]}) ${time}`;
+}
+
+// 분류 API에 넘길 "지금" 문맥. AI가 "내일 3시" 같은 상대 시간을 절대 시각으로
+// 풀 수 있도록 사용자의 로컬 현재 시각과 요일을 함께 준다.
+export function nowContextString(now: Date = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())} ${p(now.getHours())}:${p(now.getMinutes())} (${WEEKDAYS[now.getDay()]}요일)`;
+}
