@@ -28,7 +28,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     <div style={outerStyle(T)}>
       <div style={{ width: "100%", maxWidth: 420, position: "relative", paddingBottom: "calc(90px + env(safe-area-inset-bottom))" }}>
         <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 320, pointerEvents: "none", background: `radial-gradient(ellipse 78% 100% at 50% 0%, ${glow}, transparent 70%)` }} />
-        <div style={{ position: "relative", padding: "calc(26px + env(safe-area-inset-top)) 20px 10px" }}>
+        <div style={{ position: "relative", padding: "calc(12px + env(safe-area-inset-top)) 20px 10px" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
             <span className="serif" style={{ fontSize: 31, fontWeight: 700 }}>툭</span>
             <span className="serif" style={{ fontSize: 13, color: T.dim, letterSpacing: 0 }}>가볍게, 툭</span>
