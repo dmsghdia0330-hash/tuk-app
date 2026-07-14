@@ -9,22 +9,22 @@ const config: CapacitorConfig = {
   appId: "cloud.tukapp.app",
   appName: "Tuk",
   webDir: "native/www",
-  // WebView 배경을 딥그린으로. 원격 페이지가 로드되기 전 잠깐의 공백이
-  // 흰색 대신 브랜드 색으로 보여서 스플래시→앱 전환이 매끄럽다.
-  backgroundColor: "#232E27",
-  ios: { backgroundColor: "#232E27" },
-  android: { backgroundColor: "#232E27" },
+  // WebView 배경을 블랙(앱 실제 배경과 동일)으로. 원격 페이지 로드 전
+  // 잠깐의 공백이 흰색 대신 블랙이라 스플래시→앱 전환이 매끄럽다.
+  backgroundColor: "#101010",
+  ios: { backgroundColor: "#101010" },
+  android: { backgroundColor: "#101010" },
   server: {
     url: "https://tuk-app.vercel.app",
     cleartext: false,
   },
   plugins: {
-    // 스플래시(로고) 화면을 잠깐 유지해 원격 로드 공백을 덮는다.
+    // 스플래시(로고)를 잠깐만 보여주고 부드럽게 사라진다.
     SplashScreen: {
-      launchShowDuration: 2000,
+      launchShowDuration: 1000,
       launchAutoHide: true,
-      launchFadeOutDuration: 350,
-      backgroundColor: "#232E27",
+      launchFadeOutDuration: 250,
+      backgroundColor: "#101010",
       showSpinner: false,
       splashFullScreen: true,
       splashImmersive: true,
