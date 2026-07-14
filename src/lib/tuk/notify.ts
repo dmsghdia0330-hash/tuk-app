@@ -65,6 +65,44 @@ export async function cancelReminder(id: string): Promise<void> {
   }
 }
 
+// "안부" 알림: 오래 잠잠하면 가끔·부드럽게 한 번. 재촉이 아니라 안부다.
+// 앱을 열 때마다 지금 기준으로 다시 걸어서, 계속 쓰면 절대 안 오고 한동안
+// 안 열 때만 뜬다. 고정 id라 매번 덮어써 idempotent.
+const CHECKINS = [
+  { id: 990000001, days: 10, body: "요즘 어때요? 뭐든 툭 던져도 돼요." },
+  { id: 990000002, days: 30, body: "오랜만이에요. 안부 겸 들렀어요." },
+];
+
+export async function rescheduleCheckins(enabled: boolean, requestPerm = false): Promise<void> {
+  const mods = await nativeModules().catch(() => null);
+  if (!mods) return;
+  const { LocalNotifications } = mods;
+  try {
+    // 끄는 경우 포함 항상 기존 안부 예약을 먼저 지운다.
+    await LocalNotifications.cancel({ notifications: CHECKINS.map((c) => ({ id: c.id })) });
+    if (!enabled) return;
+    let perm = await LocalNotifications.checkPermissions();
+    if (perm.display !== "granted") {
+      // 앱 켤 때(requestPerm=false)는 권한을 먼저 조르지 않고 조용히 넘어간다.
+      // 설정에서 사용자가 직접 켤 때만(requestPerm=true) 권한을 요청한다.
+      if (!requestPerm) return;
+      perm = await LocalNotifications.requestPermissions();
+      if (perm.display !== "granted") return;
+    }
+    const now = Date.now();
+    await LocalNotifications.schedule({
+      notifications: CHECKINS.map((c) => ({
+        id: c.id,
+        title: "툭",
+        body: c.body,
+        schedule: { at: new Date(now + c.days * 86400000) },
+      })),
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
 // 앱을 켤 때 한 번: 아직 안 지난 예약들을 (다시) 건다. 다른 기기/웹에서 던져
 // 이 기기엔 예약이 없던 알림도 여기서 살아난다. 같은 id 재예약이라 안전하다.
 export async function rescheduleAll(entries: Entry[]): Promise<void> {

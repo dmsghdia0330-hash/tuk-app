@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, BookOpen, Download, MessageCircle, Moon, Shield, Sun, Trash2, User } from "lucide-react";
 import { FEEDBACK_EMAIL } from "@/lib/tuk/constants";
+import { rescheduleCheckins } from "@/lib/tuk/notify";
 import { useTuk } from "@/context/AppContext";
 
 function calcAge(birthdate: string): number | null {
@@ -44,6 +45,9 @@ export default function SettingsScreen() {
     const next = !notifyOn;
     setNotifyOn(next);
     window.localStorage.setItem("tuk:notifyPref", next ? "on" : "off");
+    // 켤 때는 (네이티브에서) 권한을 요청하고 안부 알림을 예약, 끄면 취소한다.
+    rescheduleCheckins(next, true).catch((err) => console.error(err));
+    showToast(next ? "가끔 안부를 물을게요" : "안부 알림을 껐어요");
   };
 
   const age = calcAge(birthdate);
@@ -148,7 +152,7 @@ export default function SettingsScreen() {
       </div>
       <div style={{ background: T.card, borderRadius: 14, padding: "15px 16px", display: "flex", alignItems: "center", gap: 12 }}>
         <Bell size={18} color="#E8A24C" style={{ flexShrink: 0 }} />
-        <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 500 }}>가끔 안부 묻기</div><div style={{ fontSize: 11.5, color: T.sub }}>알림 기능은 준비 중이에요 · 켜두면 열리는 대로 적용돼요</div></div>
+        <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 500 }}>가끔 안부 묻기</div><div style={{ fontSize: 11.5, color: T.sub }}>오래 잠잠하면 가끔 안부를 물어요 · 재촉은 안 해요</div></div>
         <button onClick={handleToggleNotify} aria-label="안부 알림 켜기/끄기" style={{ width: 44, height: 26, borderRadius: 999, background: notifyOn ? "#5FD9B4" : T.line, position: "relative", flexShrink: 0, border: "none", cursor: "pointer", padding: 0, transition: "background .2s" }}><span style={{ position: "absolute", top: 3, left: notifyOn ? 21 : 3, width: 20, height: 20, borderRadius: "50%", background: T.text, transition: "left .2s" }} /></button>
       </div>
       {/* 테마 선택 */}

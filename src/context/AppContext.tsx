@@ -17,7 +17,7 @@ import { guessTags } from "@/lib/tuk/classify";
 import { flushPendingWrites, localEntriesRepo, migrateLocalEntriesToRemote, remoteEntriesRepo } from "@/lib/tuk/entriesRepo";
 import { clearPersonalization, recordCorrection } from "@/lib/tuk/personalization";
 import { dataUrlToBlob, uploadEntryImage } from "@/lib/tuk/imageUpload";
-import { cancelReminder, rescheduleAll, scheduleReminder } from "@/lib/tuk/notify";
+import { cancelReminder, rescheduleAll, rescheduleCheckins, scheduleReminder } from "@/lib/tuk/notify";
 import { nowContextString, reminderLabelOf } from "@/lib/tuk/date";
 import type { Entry, ThemeName, ThemePalette } from "@/lib/tuk/types";
 
@@ -104,6 +104,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }
     window.localStorage.setItem("tuk:lastVisit", String(Date.now()));
+
+    // 안부 알림을 지금(=이번 방문) 기준으로 다시 건다. 계속 열면 매번 뒤로 밀려
+    // 절대 안 오고, 한동안 안 열 때만 뜬다. 권한은 여기서 조르지 않는다(네이티브 전용).
+    const checkinsOn = window.localStorage.getItem("tuk:notifyPref") !== "off";
+    rescheduleCheckins(checkinsOn).catch((err) => console.error(err));
   }, []);
 
   // 인증 상태 추적. 게스트↔로그인 전환 시 entries 소스를 로컬↔서버로 바꾸고,
