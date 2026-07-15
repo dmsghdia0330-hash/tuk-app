@@ -1,5 +1,14 @@
 apply plugin: 'com.android.application'
 
+// 릴리스 서명 정보는 git에 올리지 않는 key.properties에서 읽는다.
+// 파일이 없으면(예: 남의 체크아웃, CI) 서명 설정 없이 디버그 빌드만 되게 둔다.
+def keystorePropertiesFile = rootProject.file("key.properties")
+def keystoreProperties = new Properties()
+def hasKeystore = keystorePropertiesFile.exists()
+if (hasKeystore) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "cloud.tukapp.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,8 +25,23 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasKeystore) {
+            release {
+                // storeFile은 key.properties 위치(android/) 기준으로 푼다 —
+                // file()은 app/ 기준이라 그대로 쓰면 못 찾는다.
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
+            if (hasKeystore) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
