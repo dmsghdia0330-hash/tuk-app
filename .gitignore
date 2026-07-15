@@ -36,6 +36,13 @@ yarn-error.log*
 # vercel
 .vercel
 
+# 안드로이드 릴리스 서명키 — 절대 커밋 금지.
+# 이 키를 잃으면 플레이스토어에 앱 업데이트를 영영 못 올린다(별도 안전 백업 필수).
+*.jks
+*.keystore
+key.properties
+android/key.properties
+
 # claude code local settings
 .claude/settings.local.json
 
